@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lix Comptabilité</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <style>
+    body {
+      background-color: #2e2c2c;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    .grade-badge.Apprenti { background: #6b7280; }
+    .grade-badge.CDD { background: #f59e0b; }
+    .grade-badge.CDI { background: #10b981; }
+    .grade-badge.Chef_d\équipe { background: #3b82f6; }
+    .grade-badge.DRH { background: #8b5cf6; }
+    .grade-badge.CO-PDG { background: #ec4899; }
+    .grade-badge.PDG { background: #ef4444; }
+    .login-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .login-form {
+      background: white;
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      text-align: center;
+      min-width: 350px;
+    }
+
+    .login-form h2 {
+      color: #1e293b;
+      margin-bottom: 30px;
+    }
+
+    .login-form input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    .login-form button {
+      width: 100%;
+      padding: 12px;
+      background: #1e293b;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    .login-form button:hover {
+      background: #334155;
+    }
+
+    .user-info {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: #1e293b;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 25px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .grade-badge {
+      background: #22c55e;
+      padding: 4px 12px;
+      border-radius: 15px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .grade-badge.responsable {
+      background: #f59e0b;
+    }
+
+    .grade-badge.employe {
+      background: #6b7280;
+    }
+
+    .container {
+      width: 95%;
+      max-width: 1850px;
+      height: 90vh;
+      border-radius: 20px;
+      background-color: #8b7b7b;
+      display: flex;
+      gap: 20px;
+      padding: 20px;
+      margin: 20px auto;
+      position: relative;
+    }
+
+    .sidebar {
+      width: 250px;
+      background: #1e293b; 
+      height: 100%;
+      display: flex;
+      flex-direction: column; 
+      padding: 20px;
+      border-radius: 20px;
+    }
+
+    .sidebar h6 {
+      font-size: 14px;
+      color: #94a3b8;
+      margin: 20px 0 10px 0;
+      text-transform: uppercase;
+    }
+
+    .sidebar a {
+      display: block; 
+      color: white;
+      text-decoration: none;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .sidebar a:hover {
+      background: #334155; 
+      transform: translateX(5px);
+    }
+
+    .sidebar a.disabled {
+      color: #64748b;
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .sidebar a.disabled:hover {
+      background: none;
+      transform: none;
+    }
+
+    .logout-btn {
+      margin-top: auto;
+      padding: 12px 16px;
+      background: #dc2626;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .logout-btn:hover {
+      background: #b91c1c;
+    }
+
+    .content-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .chart-container, .service-items, .section-content {
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      display: none;
+      height: 100%;
+      overflow-y: auto;
+    }
+
+    .chart-container canvas {
+      max-height: 400px !important;
+    }
+
+    .services-layout {
+      display: flex;
+      gap: 30px;
+      height: 100%;
+    }
+
+    .services-grid {
+      flex: 2;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 15px;
+      align-content: start;
+    }
+
+    .service-btn {
+      background: #1e293b;
+      color: white;
+      border: none;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: left;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .service-btn:hover {
+      background: #334155;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .cart {
+      flex: 1;
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 20px;
+      max-height: 600px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .cart h3 { 
+      text-align: center; 
+      color: #1e293b; 
+      margin-top: 0;
+    }
+
+    .cart-item { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 12px; 
+      padding: 12px; 
+      background: #e2e8f0; 
+      border-radius: 8px; 
+      font-size: 14px;
+    }
+
+    .cart-item input { 
+      width: 60px; 
+      padding: 5px; 
+      text-align: center;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .cart-total { 
+      margin-top: auto;
+      padding-top: 20px;
+      font-weight: bold; 
+      text-align: center; 
+      font-size: 20px;
+      color: #1e293b;
+      border-top: 2px solid #1e293b;
+    }
+
+    .validate-btn { 
+      margin-top: 15px; 
+      padding: 15px; 
+      background: #22c55e; 
+      color: white; 
+      border: none; 
+      border-radius: 8px; 
+      font-size: 16px; 
+      cursor: pointer; 
+      transition: all 0.3s ease;
+      font-weight: bold;
+    }
+
+    .validate-btn:hover { 
+      background: #16a34a;
+      transform: translateY(-1px);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 50px;
+      color: #64748b;
+    }
+
+    .user-management {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+
+    .users-list {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .user-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      margin-bottom: 10px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .add-user-form {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .add-user-form input, .add-user-form select {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-success { background: #22c55e; color: white; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-danger { background: #ef4444; color: white; }
+
+    .btn:hover { transform: translateY(-1px); opacity: 0.9; }
+
+    .access-denied {
+      text-align: center;
+      padding: 50px;
+      color: #ef4444;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- LOGIN OVERLAY -->
+  <div id="login-overlay" class="login-overlay">
+    <div class="login-form">
+      <h2>🔐 Connexion</h2>
+      <input type="text" id="username" placeholder="Nom d'utilisateur" value="admin">
+      <input type="password" id="password" placeholder="Mot de passe" value="admin123">
+      <button onclick="login()">Se connecter</button>
+      <div style="margin-top: 20px; font-size: 12px; color: #64748b;">
+        <strong>Comptes de test :</strong><br>
+        admin/admin123 (Direction)<br>
+        manager/manager123 (Responsable)<br>
+        employe1/emp123 (Employé)
+      </div>
+    </div>
+  </div>
+
+  <!-- USER INFO -->
+  <div id="user-info" class="user-info" style="display: none;">
+    <div>
+      <strong id="current-username">-</strong>
+      <div class="grade-badge" id="current-grade">-</div>
+    </div>
+    <button class="logout-btn" onclick="logout()">
+      <i class="fa fa-sign-out"></i>
+    </button>
+  </div>
+
+  <div class="container" id="main-container" style="display: none;">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="employe-sidebar">
+        <h6>Dashboard</h6>
+        <a onclick="changepage('accueil')" href="#"><i class="fa fa-home"></i> Accueil</a>
+        <a onclick="changepage('services')" href="#"><i class="fa fa-cogs"></i> Services</a>
+        <a onclick="changepage('ventes')" href="#"><i class="fa fa-line-chart"></i> Mes ventes</a>
+      </div>
+      <div class="direction-sidebar" id="direction-sidebar">
+        <h6>Direction</h6>
+        <a onclick="changepage('bilan')" href="#" id="bilan-link"><i class="fa fa-bar-chart"></i> Bilan</a>
+        <a onclick="changepage('recentes')" href="#" id="recentes-link"><i class="fa fa-clock-o"></i> Ventes récentes</a>
+        <a onclick="changepage('salaires')" href="#" id="salaires-link"><i class="fa fa-money"></i> Salaires</a>
+        <a onclick="changepage('charges')" href="#" id="charges-link"><i class="fa fa-file-text"></i> Charges</a>
+        <a onclick="changepage('users')" href="#" id="users-link"><i class="fa fa-users"></i> Gestion Utilisateurs</a>
+      </div>
+    </div>
+    <!-- CONTENU PRINCIPAL -->
+    <div class="content-area">
+      <!-- GRAPH -->
+      <div id="accueil" class="chart-container">
+        <div class="loading" id="loading">Chargement des données...</div>
+        <canvas id="myChart" style="display:none;"></canvas>
+      </div>
+
+      <!-- SERVICES -->
+      <div id="services" class="service-items">
+        <div class="services-layout">
+          <div class="services-grid">
+            <button class="service-btn" onclick="addToCart('Réparation Moteur', 500)">
+              🔧 Réparation Moteur<br><small>500€</small>
+            </button>
+            <button class="service-btn" onclick="addToCart('Réparation Carrosserie', 400)">
+              🚗 Réparation Carrosserie<br><small>400€</small>
+            </button>
+            <button class="service-btn" onclick="addToCart('Changement de pneus', 200)">
+              🛞 Changement de pneus<br><small>200€</small>
+            </button>
+            <button class="service-btn" onclick="addToCart('Lavage', 50)">
+              🧽 Lavage<br><small>50€</small>
+            </button>
+            <button class="service-btn" onclick="addToCart('Dépannage', 600)">
+              🚨 Dépannage<br><small>600€</small>
+            </button>
+            <button class="service-btn" onclick="addToCart('Mise en fourrière', 300)">
+              🅿️ Mise en fourrière<br><small>300€</small>
+            </button>
+            <button class="service-btn" onclick="addToCart('Sortie fourrière (Voiture)', 350)">
+              🚗 Sortie fourrière (Voiture)<br><small>350€</small>
+            </button>
+            <button class="service-btn" onclick="addToCart('Sortie fourrière (Bateau)', 500)">
+              🚤 Sortie fourrière (Bateau)<br><small>500€</small>
+            </button>
+            <button class="service-btn" onclick="addToCart('Sortie fourrière (Avion)', 800)">
+              ✈️ Sortie fourrière (Avion/Hélicoptère)<br><small>800€</small>
+            </button>
+          </div>
+
+          <div class="cart">
+            <h3>🛒 Panier</h3>
+            <div id="cart-items"></div>
+            <div class="cart-total">Total : <span id="cart-total">0</span>€</div>
+            <button class="validate-btn" onclick="validateCart()">✅ Valider la commande</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- GESTION UTILISATEURS -->
+      <div id="users" class="section-content">
+        <div id="users-access-denied" class="access-denied" style="display: none;">
+          <h2>🚫 Accès refusé</h2>
+          <p>Seule la direction peut accéder à la gestion des utilisateurs.</p>
+        </div>
+        
+        <div id="users-content" style="display: none;">
+          <h2>👥 Gestion des Utilisateurs</h2>
+          <div class="user-management">
+            <div class="users-list">
+              <h3>Utilisateurs existants</h3>
+              <div id="users-list-container"></div>
+            </div>
+            
+            <div class="add-user-form">
+              <h3>Ajouter un utilisateur</h3>
+              <input type="text" id="new-username" placeholder="Nom d'utilisateur">
+              <input type="password" id="new-password" placeholder="Mot de passe">
+              <input type="text" id="new-nom" placeholder="Nom complet">
+                        <select id="new-grade" style="width: 100%; padding: 8px;">
+                            <option value="Apprenti">Apprenti</option>
+                            <option value="CDD">CDD</option>
+                            <option value="CDI">CDI</option>
+                            <option value="Chef_d\équipe">Chef d'équipe</option>
+                            <option value="DRH">DRH</option>
+                            <option value="CO-PDG">CO-PDG</option>
+                            <option value="PDG">PDG</option>
+                        </select>
+              <button class="btn btn-success" onclick="addNewUser()">
+                <i class="fa fa-plus"></i> Ajouter
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AUTRES SECTIONS -->
+      <div id="ventes" class="chart-container">
+        <canvas id="ventesChart"></canvas>
+      </div>
+
+      <div id="bilan" class="chart-container">
+        <canvas id="bilanChart"></canvas>
+      </div>
+
+      <div id="recentes" class="chart-container">
+        <canvas id="recentesChart"></canvas>
+      </div>
+
+      <div id="salaires" class="chart-container">
+        <canvas id="salairesChart"></canvas>
+      </div>
+
+      <div id="charges" class="chart-container">
+        <canvas id="chargesChart"></canvas>
+      </div>
+    </div>
+  </div>>
+
+<script>
+  let chart;
+  let cart = [];
+  let chartData = null;
+
+  // Configuration des graphiques pour chaque section
+  const chartConfigs = {
+    'accueil': { label: 'Chiffre d\'affaires (7 derniers jours)', color: '#3b82f6', type: 'line' },
+    'ventes': { label: 'Services les plus vendus', color: '#10b981', type: 'bar' },
+    'bilan': { label: 'Évolution cumulative du CA', color: '#f59e0b', type: 'line' },
+    'recentes': { label: 'Montants des dernières ventes', color: '#ef4444', type: 'bar' },
+    'salaires': { label: 'Salaires', color: '#8b5cf6', type: 'line' },
+    'charges': { label: 'Charges', color: '#ec4899', type: 'bar' }
+  };
+
+  async function loadData() {
+    try {
+      console.log("Chargement des données...");
+      
+      if (!window.pywebview || !window.pywebview.api) {
+        console.log("API PyWebView pas encore disponible, nouvelle tentative...");
+        setTimeout(loadData, 500);
+        return;
+      }
+
+      const data = await window.pywebview.api.getData();
+      console.log("Données reçues :", data);
+      
+      chartData = data;
+      initializeChart();
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('myChart').style.display = 'block';
+      
+    } catch (error) {
+      console.error("Erreur lors du chargement des données :", error);
+      document.getElementById('loading').innerHTML = 
+        "❌ Erreur de chargement des données<br><small>Nouvelle tentative...</small>";
+        
+      // Réessayer après un délai
+      setTimeout(loadData, 1000);
+    }
+  }
+
+  function initializeChart() {
+    const ctx = document.getElementById('myChart').getContext('2d');
+    
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Données',
+          data: [],
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderColor: '#3b82f6',
+          borderWidth: 2,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { 
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return value + '€';
+              }
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top'
+          }
+        }
+      }
+    });
+
+    // Charger les données d'accueil par défaut
+    updateChart('accueil');
+  }
+
+  function updateChart(section) {
+    if (!chartData || !chartData[section]) {
+      console.warn(`Pas de données pour la section: ${section}`);
+      return;
+    }
+
+    const config = chartConfigs[section];
+    const data = chartData[section];
+    
+    // Labels spécifiques selon la section
+    let labels;
+    switch(section) {
+      case 'accueil':
+        const today = new Date();
+        labels = [];
+        for(let i = 6; i >= 0; i--) {
+          const date = new Date(today);
+          date.setDate(date.getDate() - i);
+          labels.push(date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' }));
+        }
+        break;
+      case 'ventes':
+        // Utiliser les noms des services si disponibles
+        if(chartData.services_stats) {
+          labels = Object.keys(chartData.services_stats);
+        } else {
+          labels = data.map((_, index) => `Service ${index + 1}`);
+        }
+        break;
+      case 'recentes':
+        labels = data.map((_, index) => `Vente ${index + 1}`);
+        break;
+      default:
+        labels = data.map((_, index) => `J${index + 1}`);
+    }
+
+    // Mise à jour du type de graphique
+    chart.config.type = config.type;
+    
+    // Mise à jour des données
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = data;
+    chart.data.datasets[0].label = config.label;
+    chart.data.datasets[0].borderColor = config.color;
+    chart.data.datasets[0].backgroundColor = config.color + '20';
+
+    chart.update();
+  }
+
+  // Navigation
+  function changepage(page) {
+    // Masquer toutes les sections
+    document.querySelectorAll('.chart-container, .service-items').forEach(el => {
+      el.style.display = 'none';
+    });
+
+    // Afficher la section demandée
+    switch(page) {
+      case 'services':
+        document.getElementById('services').style.display = 'block';
+        break;
+      default:
+        document.getElementById('accueil').style.display = 'block';
+        if (chartData) updateChart(page);
+        break;
+    }
+  }
+
+  // Gestion du panier
+  function addToCart(name, price) {
+    const existing = cart.find(item => item.name === name);
+    if (existing) {
+      existing.qty++;
+    } else {
+      cart.push({name, price, qty: 1});
+    }
+    renderCart();
+  }
+
+  function updateQty(index, newQty) {
+    cart[index].qty = Math.max(1, parseInt(newQty) || 1);
+    renderCart();
+  }
+
+  function removeFromCart(index) {
+    cart.splice(index, 1);
+    renderCart();
+  }
+
+  function renderCart() {
+    const container = document.getElementById('cart-items');
+    container.innerHTML = '';
+    
+    let total = 0;
+    
+    cart.forEach((item, index) => {
+      total += item.price * item.qty;
+      
+      container.innerHTML += `
+        <div class="cart-item">
+          <div>
+            <strong>${item.name}</strong><br>
+            <small>${item.price}€ × ${item.qty}</small>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <input type="number" min="1" value="${item.qty}" 
+                   onchange="updateQty(${index}, this.value)">
+            <button onclick="removeFromCart(${index})" 
+                    style="background: #ef4444; color: white; border: none; 
+                           border-radius: 4px; padding: 4px 8px; cursor: pointer;">×</button>
+          </div>
+        </div>
+      `;
+    });
+    
+    document.getElementById('cart-total').innerText = total;
+  }
+
+  async function validateCart() {
+    if (cart.length === 0) {
+      alert("Le panier est vide !");
+      return;
+    }
+
+    const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+    try {
+      console.log("Envoi du panier:", cart);
+      
+      // Envoyer le panier complet à Python (pas juste le total)
+      await window.pywebview.api.receiveCart(cart);
+      
+      // Recharger les données
+      await loadData();
+      
+      // Mettre à jour le graphique d'accueil
+      updateChart('accueil');
+      
+      alert(`✅ Commande validée !\n${cart.length} article(s) pour ${total}€`);
+      
+      // Vider le panier
+      cart = [];
+      renderCart();
+      
+    } catch (error) {
+      console.error("Erreur lors de la validation :", error);
+      alert("❌ Erreur lors de la validation de la commande");
+    }
+  }
+
+  // Initialisation
+  window.addEventListener('pywebviewready', loadData);
+  
+  // Affichage initial
+  changepage('accueil');
+
+  let pywebviewReady = false;
+  let currentUser = null;
+
+  // Vérifier périodiquement si pywebview est disponible
+  function checkPyWebView() {
+    if (window.pywebview && window.pywebview.api) {
+      pywebviewReady = true;
+      console.log("PyWebView API est maintenant disponible");
+      
+      // Tentative de connexion automatique
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      
+      if (username && password) {
+        login();
+      }
+    } else {
+      setTimeout(checkPyWebView, 100);
+    }
+  }
+
+  // Démarrer la vérification au chargement de la page
+  checkPyWebView();
+
+  // Gestion de la connexion
+  async function login() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    
+    if (!pywebviewReady) {
+      console.log("En attente de l'initialisation de PyWebView...");
+      setTimeout(() => login(), 100);
+      return;
+    }
+    
+    try {
+      const result = await window.pywebview.api.login(username, password);
+      
+      if (result.success) {
+        // Masquer l'overlay de connexion
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('main-container').style.display = 'flex';
+        document.getElementById('user-info').style.display = 'flex';
+        
+        // Mettre à jour les infos utilisateur
+        document.getElementById('current-username').innerText = result.user.username;
+        document.getElementById('current-grade').innerText = result.user.grade;
+        document.getElementById('current-grade').className = `grade-badge ${result.user.grade}`;
+        
+        currentUser = result.user;
+        
+        // Charger les données
+        await loadData();
+        
+        // Ajuster les permissions selon le grade
+        updatePermissions(result.user.grade);
+      } else {
+        alert("Erreur de connexion: " + result.message);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la connexion:", error);
+      alert("Erreur de connexion. Vérifiez la console pour plus de détails.");
+    }
+  }
+
+  function logout() {
+    // Afficher l'overlay de connexion
+    document.getElementById('login-overlay').style.display = 'flex';
+    document.getElementById('main-container').style.display = 'none';
+    document.getElementById('user-info').style.display = 'none';
+    
+    // Réinitialiser les champs de connexion
+    document.getElementById('username').value = 'admin';
+    document.getElementById('password').value = 'admin123';
+    
+    currentUser = null;
+  }
+
+function updatePermissions(grade) {
+    const directionElements = document.querySelectorAll('.direction-sidebar a');
+    const directionSidebar = document.getElementById('direction-sidebar');
+    
+    // Masquer complètement le menu direction si pas les permissions
+    const gradesWithAccess = ['PDG', 'CO-PDG', 'DRH'];
+    
+    if (!gradesWithAccess.includes(grade)) {
+        directionSidebar.style.display = 'none';
+        return;
+    }
+    
+    // Afficher le menu direction
+    directionSidebar.style.display = 'block';
+    
+    // Gérer les permissions spécifiques
+    directionElements.forEach(el => el.classList.add('disabled'));
+    
+    if (['PDG', 'CO-PDG'].includes(grade)) {
+        // Accès complet
+        directionElements.forEach(el => el.classList.remove('disabled'));
+    } 
+    else if (grade === 'DRH') {
+        // DRH - seulement gestion utilisateurs
+        directionElements.forEach(el => {
+            if (el.id === 'users-link') {
+                el.classList.remove('disabled');
+            }
+        });
+    }
+}
+
+  // Gestion des utilisateurs (direction seulement)
+async function loadUsers() {
+    try {
+        const users = await window.pywebview.api.getUsers();
+        const container = document.getElementById('users-list-container');
+        
+        container.innerHTML = '';
+        
+        for (const [username, userData] of Object.entries(users)) {
+            const userItem = document.createElement('div');
+            userItem.className = 'user-item';
+            
+            userItem.innerHTML = `
+                <div>
+                    <strong>${username}</strong><br>
+                    <small>${userData.nom} - ${userData.grade}</small>
+                </div>
+                <div>
+                    <select id="grade-${username}" onchange="updateUserGrade('${username}', this.value)">
+                        <option value="Apprenti" ${userData.grade === 'Apprenti' ? 'selected' : ''}>Apprenti</option>
+                        <option value="CDD" ${userData.grade === 'CDD' ? 'selected' : ''}>CDD</option>
+                        <option value="CDI" ${userData.grade === 'CDI' ? 'selected' : ''}>CDI</option>
+                        <option value="Chef_d\équipe" ${userData.grade === 'Chef d\'équipe' ? 'selected' : ''}>Chef d'équipe</option>
+                        <option value="DRH" ${userData.grade === 'DRH' ? 'selected' : ''}>DRH</option>
+                        <option value="CO-PDG" ${userData.grade === 'CO-PDG' ? 'selected' : ''}>CO-PDG</option>
+                        <option value="PDG" ${userData.grade === 'PDG' ? 'selected' : ''}>PDG</option>
+                    </select>
+                </div>
+            `;
+            
+            container.appendChild(userItem);
+        }
+    } catch (error) {
+        console.error("Erreur lors du chargement des utilisateurs:", error);
+        
+        // Afficher un message d'erreur contextuel
+        const container = document.getElementById('users-list-container');
+        if (error.message.includes('403') || error.message.includes('Accès refusé')) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #ef4444;">
+                    <i class="fa fa-ban" style="font-size: 48px;"></i>
+                    <h3>Accès refusé</h3>
+                    <p>Vous n'avez pas les permissions nécessaires pour gérer les utilisateurs.</p>
+                    <small>Seuls PDG, CO-PDG et DRH peuvent accéder à cette section.</small>
+                </div>
+            `;
+        } else {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #ef4444;">
+                    <i class="fa fa-exclamation-triangle" style="font-size: 48px;"></i>
+                    <h3>Erreur de chargement</h3>
+                    <p>${error.message}</p>
+                </div>
+            `;
+        }
+    }
+}
+
+async function updateUserGrade(username, newGrade) {
+    // Validation des nouveaux grades
+    const gradesValides = ['Apprenti', 'CDD', 'CDI', 'Chef d\'équipe', 'DRH', 'CO-PDG', 'PDG'];
+    if (!gradesValides.includes(newGrade)) {
+        alert("Grade invalide");
+        await loadUsers(); // Recharger pour réinitialiser
+        return;
+    }
+    
+    if (!confirm(`Êtes-vous sûr de vouloir changer le grade de ${username} en ${newGrade} ?`)) {
+        await loadUsers(); // Recharger pour réinitialiser
+        return;
+    }
+    
+    try {
+        const result = await window.pywebview.api.updateUserGrade(username, newGrade);
+        
+        if (result.success) {
+            alert(result.message);
+            await loadUsers();
+        } else {
+            alert("Erreur: " + result.message);
+            await loadUsers();
+        }
+    } catch (error) {
+        console.error("Erreur lors de la mise à jour du grade:", error);
+        alert("Erreur: " + error.message);
+        await loadUsers();
+    }
+}
+
+async function addNewUser() {
+    const username = document.getElementById('new-username').value;
+    const password = document.getElementById('new-password').value;
+    const nom = document.getElementById('new-nom').value;
+    const grade = document.getElementById('new-grade').value;
+    
+    if (!username || !password || !nom) {
+        alert("Veuillez remplir tous les champs");
+        return;
+    }
+    
+    // Validation des nouveaux grades
+    const gradesValides = ['Apprenti', 'CDD', 'CDI', 'Chef d\'équipe', 'DRH', 'CO-PDG', 'PDG'];
+    if (!gradesValides.includes(grade)) {
+        alert("Grade invalide");
+        return;
+    }
+    
+    try {
+        const result = await window.pywebview.api.addUser(username, password, grade, nom);
+        
+        if (result.success) {
+            alert(result.message);
+            // Réinitialiser le formulaire
+            document.getElementById('new-username').value = '';
+            document.getElementById('new-password').value = '';
+            document.getElementById('new-nom').value = '';
+            document.getElementById('new-grade').value = 'Apprenti';
+            
+            // Recharger la liste des utilisateurs
+            await loadUsers();
+        } else {
+            alert("Erreur: " + result.message);
+        }
+    } catch (error) {
+        console.error("Erreur lors de l'ajout d'utilisateur:", error);
+        alert("Erreur: " + error.message);
+    }
+}
+
+  // Navigation améliorée
+  function changepage(page) {
+    // Masquer toutes les sections
+    document.querySelectorAll('.chart-container, .service-items, .section-content').forEach(el => {
+      el.style.display = 'none';
+    });
+
+    // Afficher la section demandée
+    const section = document.getElementById(page);
+    if (section) {
+      section.style.display = 'block';
+      
+      // Actions spécifiques selon la page
+      switch(page) {
+        case 'users':
+          // Vérifier les permissions avant d'afficher
+          if (currentUser && currentUser.grade === 'direction') {
+            document.getElementById('users-access-denied').style.display = 'none';
+            document.getElementById('users-content').style.display = 'block';
+            loadUsers();
+          } else {
+            document.getElementById('users-access-denied').style.display = 'block';
+            document.getElementById('users-content').style.display = 'none';
+          }
+          break;
+        default:
+          if (chartData) updateChart(page);
+          break;
+      }
+    }
+  }
+
+  // Fonction pour permettre la connexion avec la touche Entrée
+  document.getElementById('password').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      login();
+    }
+  });
+</script>
+</body>
+</html>

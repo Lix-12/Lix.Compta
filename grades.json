@@ -1,0 +1,30 @@
+{
+  "Apprenti": {
+    "commission": 65.0,
+    "salaire_fixe": 1500.0
+  },
+  "CDD": {
+    "commission": 65.0,
+    "salaire_fixe": 2800.0
+  },
+  "CDI": {
+    "commission": 70.0,
+    "salaire_fixe": 3200.0
+  },
+  "Chef d'équipe": {
+    "commission": 75.0,
+    "salaire_fixe": 4000.0
+  },
+  "DRH": {
+    "commission": 80.0,
+    "salaire_fixe": 5000.0
+  },
+  "CO-PDG": {
+    "commission": 85.0,
+    "salaire_fixe": 7000.0
+  },
+  "PDG": {
+    "commission": 100.0,
+    "salaire_fixe": 8000.0
+  }
+}

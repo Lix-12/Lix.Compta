@@ -1,0 +1,769 @@
+{
+  "ventes_historique": [
+    {
+      "date": "2025-09-17T17:32:40.247018",
+      "total": 2900,
+      "items": [
+        {
+          "name": "Changement de pneus",
+          "price": 200,
+          "qty": 1
+        },
+        {
+          "name": "Réparation Moteur",
+          "price": 500,
+          "qty": 1
+        },
+        {
+          "name": "Réparation Carrosserie",
+          "price": 400,
+          "qty": 1
+        },
+        {
+          "name": "Lavage",
+          "price": 50,
+          "qty": 1
+        },
+        {
+          "name": "Dépannage",
+          "price": 600,
+          "qty": 1
+        },
+        {
+          "name": "Mise en fourrière",
+          "price": 300,
+          "qty": 1
+        },
+        {
+          "name": "Sortie fourrière (Bateau)",
+          "price": 500,
+          "qty": 1
+        },
+        {
+          "name": "Sortie fourrière (Voiture)",
+          "price": 350,
+          "qty": 1
+        }
+      ],
+      "id": 1
+    },
+    {
+      "date": "2025-09-17T17:33:07.370801",
+      "total": 7400,
+      "items": [
+        {
+          "name": "Sortie fourrière (Avion)",
+          "price": 800,
+          "qty": 2
+        },
+        {
+          "name": "Sortie fourrière (Voiture)",
+          "price": 350,
+          "qty": 2
+        },
+        {
+          "name": "Dépannage",
+          "price": 600,
+          "qty": 2
+        },
+        {
+          "name": "Changement de pneus",
+          "price": 200,
+          "qty": 2
+        },
+        {
+          "name": "Réparation Moteur",
+          "price": 500,
+          "qty": 2
+        },
+        {
+          "name": "Réparation Carrosserie",
+          "price": 400,
+          "qty": 2
+        },
+        {
+          "name": "Lavage",
+          "price": 50,
+          "qty": 2
+        },
+        {
+          "name": "Mise en fourrière",
+          "price": 300,
+          "qty": 2
+        },
+        {
+          "name": "Sortie fourrière (Bateau)",
+          "price": 500,
+          "qty": 2
+        }
+      ],
+      "id": 2
+    },
+    {
+      "date": "2025-09-17T17:41:10.951847",
+      "total": 2000,
+      "items": [
+        {
+          "name": "Dépannage",
+          "price": 600,
+          "qty": 3
+        },
+        {
+          "name": "Lavage",
+          "price": 50,
+          "qty": 4
+        }
+      ],
+      "id": 3
+    },
+    {
+      "date": "2025-09-17T17:41:53.658464",
+      "total": 3200,
+      "items": [
+        {
+          "name": "Sortie fourrière (Avion)",
+          "price": 800,
+          "qty": 4
+        }
+      ],
+      "id": 4
+    },
+    {
+      "date": "2025-09-17T17:41:57.560478",
+      "total": 4000,
+      "items": [
+        {
+          "name": "Sortie fourrière (Avion)",
+          "price": 800,
+          "qty": 5
+        }
+      ],
+      "id": 5
+    },
+    {
+      "date": "2025-09-17T17:49:24.975242",
+      "total": 2000,
+      "items": [
+        {
+          "name": "Changement de pneus",
+          "price": 200,
+          "qty": 2
+        },
+        {
+          "name": "Sortie fourrière (Avion)",
+          "price": 800,
+          "qty": 2
+        }
+      ],
+      "id": 6
+    },
+    {
+      "date": "2025-09-17T21:46:45.497883",
+      "total": 3700,
+      "items": [
+        {
+          "name": "Réparation Moteur",
+          "price": 500,
+          "qty": 1
+        },
+        {
+          "name": "Réparation Carrosserie",
+          "price": 400,
+          "qty": 1
+        },
+        {
+          "name": "Changement de pneus",
+          "price": 200,
+          "qty": 1
+        },
+        {
+          "name": "Lavage",
+          "price": 50,
+          "qty": 1
+        },
+        {
+          "name": "Dépannage",
+          "price": 600,
+          "qty": 1
+        },
+        {
+          "name": "Mise en fourrière",
+          "price": 300,
+          "qty": 1
+        },
+        {
+          "name": "Sortie fourrière (Voiture)",
+          "price": 350,
+          "qty": 1
+        },
+        {
+          "name": "Sortie fourrière (Bateau)",
+          "price": 500,
+          "qty": 1
+        },
+        {
+          "name": "Sortie fourrière (Avion)",
+          "price": 800,
+          "qty": 1
+        }
+      ],
+      "id": 7,
+      "vendeur": "manager"
+    },
+    {
+      "date": "2025-09-17T22:03:29.705729",
+      "total": 4750,
+      "items": [
+        {
+          "name": "Changement de pneus",
+          "price": 200,
+          "qty": 4
+        },
+        {
+          "name": "Lavage",
+          "price": 50,
+          "qty": 4
+        },
+        {
+          "name": "Mise en fourrière",
+          "price": 300,
+          "qty": 2
+        },
+        {
+          "name": "Sortie fourrière (Bateau)",
+          "price": 500,
+          "qty": 1
+        },
+        {
+          "name": "Sortie fourrière (Avion)",
+          "price": 800,
+          "qty": 1
+        },
+        {
+          "name": "Sortie fourrière (Voiture)",
+          "price": 350,
+          "qty": 1
+        },
+        {
+          "name": "Dépannage",
+          "price": 600,
+          "qty": 1
+        },
+        {
+          "name": "Réparation Moteur",
+          "price": 500,
+          "qty": 1
+        },
+        {
+          "name": "Réparation Carrosserie",
+          "price": 400,
+          "qty": 1
+        }
+      ],
+      "id": 8,
+      "vendeur": "admin"
+    },
+    {
+      "date": "2025-09-17T22:05:53.227868",
+      "total": 800,
+      "items": [
+        {
+          "name": "Réparation Carrosserie",
+          "price": 400,
+          "qty": 2
+        }
+      ],
+      "id": 9,
+      "vendeur": "Test"
+    },
+    {
+      "date": "2025-09-17T22:06:08.613287",
+      "total": 400,
+      "items": [
+        {
+          "name": "Réparation Carrosserie",
+          "price": 400,
+          "qty": 1
+        }
+      ],
+      "id": 10,
+      "vendeur": "Test"
+    },
+    {
+      "date": "2025-09-17T22:06:52.260646",
+      "total": 1100,
+      "items": [
+        {
+          "name": "Lavage",
+          "price": 50,
+          "qty": 1
+        },
+        {
+          "name": "Sortie fourrière (Voiture)",
+          "price": 350,
+          "qty": 3
+        }
+      ],
+      "id": 11,
+      "vendeur": "Test"
+    },
+    {
+      "date": "2025-09-17T22:10:38.861723",
+      "total": 1800,
+      "items": [
+        {
+          "name": "Dépannage",
+          "price": 600,
+          "qty": 3
+        }
+      ],
+      "id": 12,
+      "vendeur": "admin"
+    },
+    {
+      "date": "2025-09-17T22:13:25.807611",
+      "total": 400,
+      "items": [
+        {
+          "name": "Changement de pneus",
+          "price": 200,
+          "qty": 2
+        }
+      ],
+      "id": 13,
+      "vendeur": "admin"
+    },
+    {
+      "date": "2025-09-17T22:13:39.073485",
+      "total": 1400,
+      "items": [
+        {
+          "name": "Changement de pneus",
+          "price": 200,
+          "qty": 7
+        }
+      ],
+      "id": 14,
+      "vendeur": "admin"
+    },
+    {
+      "date": "2025-09-17T22:17:13.042471",
+      "total": 1500,
+      "items": [
+        {
+          "name": "Réparation Moteur",
+          "price": 500,
+          "qty": 3
+        }
+      ],
+      "id": 15,
+      "vendeur": "admin"
+    },
+    {
+      "date": "2025-09-17T22:22:18.940965",
+      "total": 1300,
+      "items": [
+        {
+          "name": "Réparation Carrosserie",
+          "price": 400,
+          "qty": 2
+        },
+        {
+          "name": "Changement de pneus",
+          "price": 200,
+          "qty": 2
+        },
+        {
+          "name": "Lavage",
+          "price": 50,
+          "qty": 2
+        }
+      ],
+      "id": 16,
+      "vendeur": "admin"
+    },
+    {
+      "date": "2025-09-17T22:26:28.413588",
+      "total": 400,
+      "items": [
+        {
+          "name": "Changement de pneus",
+          "price": 200,
+          "qty": 2
+        }
+      ],
+      "id": 17,
+      "vendeur": "admin"
+    },
+    {
+      "date": "2025-09-17T22:30:21.429968",
+      "total": 800,
+      "items": [
+        {
+          "name": "Sortie fourrière (Avion)",
+          "price": 800,
+          "qty": 1
+        }
+      ],
+      "id": 18,
+      "vendeur": "admin"
+    },
+    {
+      "date": "2025-09-17T22:47:19.885007",
+      "total": 1000,
+      "items": [
+        {
+          "name": "Changement de pneus",
+          "price": 200,
+          "qty": 5
+        }
+      ],
+      "id": 19,
+      "vendeur": "aaaaaaaaaaa"
+    },
+    {
+      "date": "2025-09-17T22:48:04.869234",
+      "total": 49000,
+      "items": [
+        {
+          "name": "Réparation Moteur",
+          "price": 500,
+          "qty": 98
+        }
+      ],
+      "id": 20,
+      "vendeur": "aaaaaaaaaaa"
+    },
+    {
+      "date": "2025-09-17T22:53:05.367398",
+      "total": 700,
+      "items": [
+        {
+          "name": "Réparation Moteur",
+          "price": 500,
+          "qty": 1
+        },
+        {
+          "name": "Changement de pneus",
+          "price": 200,
+          "qty": 1
+        }
+      ],
+      "id": 21,
+      "vendeur": "admin"
+    },
+    {
+      "date": "2025-09-17T23:18:55.331856",
+      "total": 1600,
+      "items": [
+        {
+          "name": "Changement de pneus",
+          "price": 200,
+          "qty": 2
+        },
+        {
+          "name": "Réparation Carrosserie",
+          "price": 400,
+          "qty": 3
+        }
+      ],
+      "id": 22,
+      "vendeur": "employe1"
+    },
+    {
+      "date": "2025-09-17T23:19:58.932760",
+      "total": 4600,
+      "items": [
+        {
+          "name": "Lavage",
+          "price": 50,
+          "qty": 2
+        },
+        {
+          "name": "Dépannage",
+          "price": 600,
+          "qty": 1
+        },
+        {
+          "name": "Sortie fourrière (Bateau)",
+          "price": 500,
+          "qty": 1
+        },
+        {
+          "name": "Réparation Moteur",
+          "price": 500,
+          "qty": 2
+        },
+        {
+          "name": "Sortie fourrière (Avion)",
+          "price": 800,
+          "qty": 3
+        }
+      ],
+      "id": 23,
+      "vendeur": "admin"
+    },
+    {
+      "date": "2025-09-18T14:12:49.486491",
+      "total": 2100,
+      "items": [
+        {
+          "name": "Changement de pneus",
+          "price": 200,
+          "qty": 2
+        },
+        {
+          "name": "Réparation Carrosserie",
+          "price": 400,
+          "qty": 2
+        },
+        {
+          "name": "Lavage",
+          "price": 50,
+          "qty": 2
+        },
+        {
+          "name": "Mise en fourrière",
+          "price": 300,
+          "qty": 1
+        },
+        {
+          "name": "Sortie fourrière (Bateau)",
+          "price": 500,
+          "qty": 1
+        }
+      ],
+      "id": 24,
+      "vendeur": "Lix"
+    },
+    {
+      "date": "2025-09-18T14:13:22.855873",
+      "total": 900,
+      "items": [
+        {
+          "name": "Dépannage",
+          "price": 600,
+          "qty": 1
+        },
+        {
+          "name": "Mise en fourrière",
+          "price": 300,
+          "qty": 1
+        }
+      ],
+      "id": 25,
+      "vendeur": "Lix"
+    },
+    {
+      "date": "2025-09-18T14:13:35.313143",
+      "total": 3200,
+      "items": [
+        {
+          "name": "Changement de pneus",
+          "price": 200,
+          "qty": 2
+        },
+        {
+          "name": "Lavage",
+          "price": 50,
+          "qty": 2
+        },
+        {
+          "name": "Dépannage",
+          "price": 600,
+          "qty": 4
+        },
+        {
+          "name": "Mise en fourrière",
+          "price": 300,
+          "qty": 1
+        }
+      ],
+      "id": 26,
+      "vendeur": "Lix"
+    },
+    {
+      "date": "2025-09-18T14:19:50.143282",
+      "total": 50550,
+      "items": [
+        {
+          "name": "Sortie fourrière (Voiture)",
+          "price": 350,
+          "qty": 11
+        },
+        {
+          "name": "Sortie fourrière (Avion)",
+          "price": 800,
+          "qty": 50
+        },
+        {
+          "name": "Dépannage",
+          "price": 600,
+          "qty": 7
+        },
+        {
+          "name": "Réparation Moteur",
+          "price": 500,
+          "qty": 2
+        },
+        {
+          "name": "Changement de pneus",
+          "price": 200,
+          "qty": 5
+        },
+        {
+          "name": "Sortie fourrière (Bateau)",
+          "price": 500,
+          "qty": 1
+        }
+      ],
+      "id": 27,
+      "vendeur": "Lix"
+    },
+    {
+      "date": "2025-09-18T14:22:35.381301",
+      "total": 80000,
+      "items": [
+        {
+          "name": "Sortie fourrière (Avion)",
+          "price": 800,
+          "qty": 100
+        }
+      ],
+      "id": 28,
+      "vendeur": "Lix"
+    },
+    {
+      "date": "2025-09-18T14:31:10.054509",
+      "total": 400,
+      "items": [
+        {
+          "name": "Changement de pneus",
+          "price": 200,
+          "qty": 2
+        }
+      ],
+      "id": 29,
+      "vendeur": "Lix"
+    },
+    {
+      "date": "2025-09-18T15:53:07.958189",
+      "total": 461,
+      "items": [
+        {
+          "name": "EEEEEE",
+          "price": 456,
+          "qty": 1
+        },
+        {
+          "name": "TTT",
+          "price": 1,
+          "qty": 2
+        },
+        {
+          "name": "A",
+          "price": 1,
+          "qty": 3
+        }
+      ],
+      "id": 30,
+      "vendeur": "admin"
+    },
+    {
+      "date": "2025-09-18T16:06:34.073826",
+      "total": 2400,
+      "items": [
+        {
+          "name": "🔧 Réparation Moteur",
+          "price": 200,
+          "qty": 1
+        },
+        {
+          "name": "🚗 Réparation Carrosserie",
+          "price": 50,
+          "qty": 1
+        },
+        {
+          "name": "🛞 Changement de pneus",
+          "price": 100,
+          "qty": 1
+        },
+        {
+          "name": "🧽 Lavage",
+          "price": 50,
+          "qty": 1
+        },
+        {
+          "name": "🚨 Dépannage / km",
+          "price": 150,
+          "qty": 1
+        },
+        {
+          "name": "🅿️ Mise en fourrière",
+          "price": 200,
+          "qty": 1
+        },
+        {
+          "name": "🚗 Sortie fourrière (Voiture)",
+          "price": 350,
+          "qty": 1
+        },
+        {
+          "name": "🚤 Sortie fourrière (Bateau)",
+          "price": 500,
+          "qty": 1
+        },
+        {
+          "name": "✈️ Sortie fourrière (Avion/Hélicoptère)",
+          "price": 800,
+          "qty": 1
+        }
+      ],
+      "id": 31,
+      "vendeur": "admin"
+    }
+  ],
+  "services_vendus": {
+    "Changement de pneus": 84,
+    "Réparation Moteur": 111,
+    "Réparation Carrosserie": 15,
+    "Lavage": 21,
+    "Dépannage": 24,
+    "Mise en fourrière": 9,
+    "Sortie fourrière (Bateau)": 8,
+    "Sortie fourrière (Voiture)": 19,
+    "Sortie fourrière (Avion)": 158,
+    "EEEEEE": 1,
+    "TTT": 2,
+    "A": 3,
+    "🔧 Réparation Moteur": 1,
+    "🚗 Réparation Carrosserie": 1,
+    "🛞 Changement de pneus": 1,
+    "🧽 Lavage": 1,
+    "🚨 Dépannage / km": 1,
+    "🅿️ Mise en fourrière": 1,
+    "🚗 Sortie fourrière (Voiture)": 1,
+    "🚤 Sortie fourrière (Bateau)": 1,
+    "✈️ Sortie fourrière (Avion/Hélicoptère)": 1
+  },
+  "ventes_par_jour": {},
+  "total_mensuel": 0,
+  "salaires": [
+    3000,
+    3200,
+    3100,
+    3300,
+    3150,
+    3050,
+    3250
+  ],
+  "charges": [
+    500,
+    600,
+    550,
+    650,
+    575,
+    525,
+    625
+  ]
+}

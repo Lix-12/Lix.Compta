@@ -1,0 +1,45 @@
+{
+  "admin": {
+    "password": "admin123",
+    "grade": "PDG",
+    "nom": "yy",
+    "prenom": "Pierre",
+    "salaire_fixe": 5000,
+    "commission": 15,
+    "objectif_ca": 20000
+  },
+  "employe1": {
+    "password": "emp123",
+    "grade": "Chef d'équipe",
+    "nom": "aa",
+    "prenom": "bb",
+    "salaire_fixe": 3000,
+    "commission": 5,
+    "objectif_ca": 10000
+  },
+  "employe2": {
+    "password": "emp456",
+    "grade": "Apprenti",
+    "nom": "Lambert",
+    "prenom": "Sophie",
+    "salaire_fixe": 3200,
+    "commission": 5,
+    "objectif_ca": 12000
+  },
+  "aaaaaaaaaaa": {
+    "password": "1208",
+    "grade": "CDD",
+    "nom": "dd",
+    "prenom": "rr",
+    "salaire_fixe": 100000000000,
+    "commission": 100,
+    "objectif_ca": 50000
+  },
+  "Lix": {
+    "password": "1234",
+    "grade": "DRH",
+    "nom": "Smith",
+    "prenom": "Joshua",
+    "objectif_ca": 0
+  }
+}

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lix Comptabilité - Connexion</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    
+    .login-container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 400px;
+      overflow: hidden;
+    }
+    
+    .login-header {
+      background: #1e293b;
+      color: white;
+      padding: 30px 20px;
+      text-align: center;
+    }
+    
+    .login-header h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    
+    .login-header i {
+      font-size: 50px;
+      margin-bottom: 15px;
+      display: block;
+    }
+    
+    .login-form {
+      padding: 30px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: border-color 0.3s ease;
+    }
+    
+    .form-group input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .login-btn {
+      width: 100%;
+      padding: 15px;
+      background: #1e293b;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      margin-top: 10px;
+    }
+    
+    .login-btn:hover {
+      background: #334155;
+      transform: translateY(-1px);
+    }
+    
+    .login-btn:active {
+      transform: translateY(0);
+    }
+    
+    .test-accounts {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 25px;
+      font-size: 14px;
+    }
+    
+    .test-accounts h3 {
+      color: #1e293b;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    
+    .account-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      padding: 8px;
+      background: white;
+      border-radius: 6px;
+      border-left: 4px solid #3b82f6;
+    }
+    
+    .account-role {
+      font-weight: 600;
+      color: #64748b;
+    }
+    
+    .error-message {
+      background: #fee2e2;
+      color: #dc2626;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
+      display: none;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 10px;
+      color: #64748b;
+      display: none;
+    }
+    
+    @media (max-width: 480px) {
+      .login-container {
+        margin: 10px;
+      }
+      
+      .login-form {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-header">
+      <i class="fa fa-lock"></i>
+      <h1>Lix Comptabilité</h1>
+      <p>Système de gestion commerciale</p>
+    </div>
+    
+    <div class="login-form">
+      <div id="error-message" class="error-message"></div>
+      <div id="loading" class="loading">Connexion en cours...</div>
+      
+      <div class="form-group">
+        <label for="username">Nom d'utilisateur</label>
+        <input type="text" id="username" placeholder="Entrez votre nom d'utilisateur" value="admin">
+      </div>
+      
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <input type="password" id="password" placeholder="Entrez votre mot de passe" value="admin123">
+      </div>
+      
+      <button class="login-btn" onclick="login()">
+        <i class="fa fa-sign-in"></i> Se connecter
+      </button>
+      
+      <div class="test-accounts">
+        <h3>Comptes de test</h3>
+        <div class="account-item">
+          <span>admin / admin123</span>
+          <span class="account-role">Direction</span>
+        </div>
+        <div class="account-item">
+          <span>manager / manager123</span>
+          <span class="account-role">Responsable</span>
+        </div>
+        <div class="account-item">
+          <span>employe1 / emp123</span>
+          <span class="account-role">Employé</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '/api';
+    
+    function showError(message) {
+      const errorDiv = document.getElementById('error-message');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+      setTimeout(() => errorDiv.style.display = 'none', 5000);
+    }
+    
+    function showLoading(show) {
+      document.getElementById('loading').style.display = show ? 'block' : 'none';
+    }
+    
+    async function login() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      
+      if (!username || !password) {
+        showError('Veuillez saisir un nom d\'utilisateur et un mot de passe');
+        return;
+      }
+      
+      showLoading(true);
+      
+      try {
+        const response = await fetch(`${API_BASE}/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({ username, password })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          // Redirection vers l'application principale
+          window.location.href = '/';
+        } else {
+          showError(result.message || 'Identifiants incorrects');
+        }
+      } catch (error) {
+        console.error('Erreur de connexion:', error);
+        showError('Erreur de connexion. Vérifiez que le serveur est démarré.');
+      } finally {
+        showLoading(false);
+      }
+    }
+    
+    // Permettre la connexion avec la touche Entrée
+    document.getElementById('password').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        login();
+      }
+    });
+    
+    // Focus sur le champ mot de passe après le nom d'utilisateur
+    document.getElementById('username').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        document.getElementById('password').focus();
+      }
+    });
+  </script>
+</body>
+</html>

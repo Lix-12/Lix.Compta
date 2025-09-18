@@ -1,0 +1,6 @@
+tk
+matplotlib
+webview
+pywebview
+flask
+flask_cors
