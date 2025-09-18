@@ -1,6 +1,7 @@
 tk
 matplotlib
-webview
+streamlit
 pywebview
 flask
+
 flask_cors
