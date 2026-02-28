@@ -17,6 +17,8 @@ app.secret_key = 'votre_cle_secrete_tres_secrete_12345'
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = False
 app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_NAME'] = 'lix_session'  # ← ajoute ça
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)  # ← et ça
 
 CORS(app,
      supports_credentials=True,
