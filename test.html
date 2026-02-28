@@ -2019,7 +2019,7 @@
         // Modifiez checkAuth pour charger les stats
         async function checkAuth() {
             try {
-                const user = await apiCall('/current_user');
+                const user = await apiCall(`${API_BASE}/current_user`);
                 if (user && user.username) {
                     currentUser = user;
                     document.getElementById('main-container').style.display = 'flex';
