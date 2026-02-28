@@ -239,7 +239,6 @@ def load_data():
     except FileNotFoundError:
         return {
             "ventes_historique": [],
-            "services_vendus": {},
             "ventes_par_jour": {},
             "total_mensuel": 0
         }
@@ -928,9 +927,9 @@ if __name__ == '__main__':
         with open('data.json', 'w') as f:
             json.dump({
                 "ventes_historique": [],
-                "services_vendus": {},
                 "ventes_par_jour": {},
                 "total_mensuel": 0
             }, f)
     
-    app.run(debug=True, port=5000, host='0.0.0.0')
+    port = int(os.environ.get('PORT', 5000))  # ← cette ligne
+    app.run(debug=False, port=port, host='0.0.0.0')
