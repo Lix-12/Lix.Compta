@@ -505,46 +505,6 @@ def update_user_grade_route():
     save_users()
     
     return jsonify({"success": True, "message": f"Grade de {username} mis à jour vers {new_grade}"})
-@app.route('/api/cart', methods=['POST', 'OPTIONS'])
-def receive_cart():
-    if request.method == 'OPTIONS':
-        return '', 200
-        
-    if 'user' not in session:
-        return jsonify({"error": "Non authentifié"}), 401
-    
-    cart_items = request.get_json()
-    if not cart_items:
-        return jsonify({"error": "Panier vide"}), 400
-    
-    total = sum(item["price"] * item["qty"] for item in cart_items)
-    
-    data = load_data()
-    
-    nouvelle_vente = {
-        "date": datetime.now().isoformat(),
-        "total": total,
-        "items": cart_items,
-        "id": len(data.get("ventes_historique", [])) + 1,
-        "vendeur": session['user']['username']
-    }
-    
-    if "ventes_historique" not in data:
-        data["ventes_historique"] = []
-    data["ventes_historique"].append(nouvelle_vente)
-    
-    if "services_vendus" not in data:
-        data["services_vendus"] = {}
-    
-    for item in cart_items:
-        service_name = item["name"]
-        if service_name in data["services_vendus"]:
-            data["services_vendus"][service_name] += item["qty"]
-        else:
-            data["services_vendus"][service_name] = item["qty"]
-    
-    save_data(data)
-    return jsonify({"success": True, "message": "Vente enregistrée"})
 
 @app.route('/api/my_data', methods=['GET', 'OPTIONS'])
 def get_my_data():
