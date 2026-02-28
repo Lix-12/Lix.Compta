@@ -321,6 +321,7 @@ def api_login():
     cursor.close()
     conn.close()
     if user:
+        session.permanent = True
         session['user'] = {'username': user['username'], 'grade': user['grade']}
         return jsonify({"success": True, "user": session['user']})
     return jsonify({"success": False, "message": "Identifiants incorrects"})
