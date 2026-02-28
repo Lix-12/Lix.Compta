@@ -297,6 +297,16 @@
             padding: 50px;
             color: #ef4444;
         }
+        .lottery-grid {
+            transition: all 0.3s ease;
+        }
+        .lottery-grid:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .grid-numbers button:not(:disabled):hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+        }
     </style>
 </head>
 
@@ -493,6 +503,89 @@
 
                     <h3>Utilisateurs existants</h3>
                     <div id="users-list-container" style="max-height: 400px; overflow-y: auto;"></div>
+                </div>
+            </div>
+            <!-- À AJOUTER DANS LA SECTION CONTENU PRINCIPAL, APRÈS LA DIV "mes-ventes" -->
+            <div id="loterie" class="section-content">
+                <h2>🎟️ Vente de ticket de loterie</h2>
+                
+                <!-- Formulaire d'achat -->
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 15px; margin-bottom: 25px; color: white;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500;">
+                                <i class="fa fa-user"></i> Prénom
+                            </label>
+                            <input type="text" id="loterie-prenom" placeholder="Prénom de l'acheteur" 
+                                style="width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 16px;">
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500;">
+                                <i class="fa fa-user-circle"></i> Nom
+                            </label>
+                            <input type="text" id="loterie-nom" placeholder="Nom de l'acheteur" 
+                                style="width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 16px;">
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500;">
+                                <i class="fa fa-phone"></i> Téléphone
+                            </label>
+                            <input type="tel" id="loterie-telephone" placeholder="Numéro de téléphone" 
+                                style="width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 16px;">
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500;">
+                                <i class="fa fa-ticket"></i> Nombre de tickets
+                            </label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="number" id="loterie-nombre" min="1" max="50" value="1" 
+                                    style="flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 16px;">
+                                <button onclick="acheterTickets()" class="btn" 
+                                    style="background: #f59e0b; color: white; padding: 12px 25px; border-radius: 8px; font-weight: bold;">
+                                    <i class="fa fa-shopping-cart"></i> Acheter
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grilles de tickets -->
+                <div id="lottery-grids-container">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="margin: 0;">🎯 Sélectionnez vos numéros</h3>
+                        <div style="background: #f0f9ff; padding: 8px 15px; border-radius: 20px;">
+                            <span id="tickets-restants">0</span> tickets restants à choisir
+                        </div>
+                    </div>
+
+                    <!-- Grilles de numéros -->
+                    <div id="lottery-grids"></div>
+
+                    <!-- Bouton de validation final -->
+                    <div id="lottery-validation-section" style="display: none; margin-top: 25px; text-align: center;">
+                        <button onclick="validerAchatComplet()" class="btn" 
+                            style="background: #22c55e; color: white; padding: 15px 40px; border-radius: 10px; font-size: 18px; font-weight: bold;">
+                            <i class="fa fa-check-circle"></i> Confirmer l'achat de tous les tickets
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Panier temporaire (caché par défaut) -->
+                <div id="lottery-cart" style="display: none; margin-top: 30px; background: #f8f9fa; border-radius: 12px; padding: 20px;">
+                    <h3 style="margin-top: 0;">🛒 Tickets sélectionnés</h3>
+                    <div id="selected-tickets-list"></div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
+                        <div>
+                            <strong>Total: </strong>
+                            <span id="cart-total" style="font-size: 24px; font-weight: bold; color: #3b82f6;">0</span>$
+                        </div>
+                        <button onclick="clearCart()" class="btn" style="background: #ef4444; color: white;">
+                            <i class="fa fa-trash"></i> Vider le panier
+                        </button>
+                    </div>
                 </div>
             </div>
             <!-- MES VENTES PERSONNELLES -->
@@ -1137,6 +1230,8 @@
                             }
                             break;
 
+                        case 'loterie':
+                            initLoterie
                         case 'mes-ventes':
                             // Charger les données personnelles si pas encore fait
                             if (!personalChartData) {
@@ -2247,6 +2342,363 @@
             const s = Math.floor((ms % 60000) / 1000);
             return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
         }
+
+let ticketsAcheter = 0;
+let ticketsSelectionnes = [];
+let grillesActuelles = [];
+let prixTicketLoterie = 100; // Prix par défaut, sera mis à jour depuis la BDD
+
+// Initialiser la loterie au chargement
+async function initLoterie() {
+    try {
+        // Récupérer le prix depuis les paramètres
+        const settings = await apiCall('/settings');
+        prixTicketLoterie = settings.lottery_price || 100;
+        
+        // Réinitialiser l'état
+        ticketsSelectionnes = [];
+        grillesActuelles = [];
+        ticketsAcheter = 0;
+        
+        // Mettre à jour l'affichage
+        document.getElementById('tickets-restants').textContent = '0';
+        document.getElementById('lottery-grids').innerHTML = '';
+        document.getElementById('lottery-validation-section').style.display = 'none';
+        document.getElementById('lottery-cart').style.display = 'none';
+        
+    } catch (error) {
+        console.error('Erreur initialisation loterie:', error);
+    }
+}
+
+// Fonction appelée quand on clique sur "Acheter"
+function acheterTickets() {
+    // Récupérer les valeurs du formulaire
+    const prenom = document.getElementById('loterie-prenom').value.trim();
+    const nom = document.getElementById('loterie-nom').value.trim();
+    const telephone = document.getElementById('loterie-telephone').value.trim();
+    const nombre = parseInt(document.getElementById('loterie-nombre').value);
+
+    // Validation
+    if (!prenom || !nom || !telephone) {
+        alert('Veuillez remplir tous les champs (prénom, nom, téléphone)');
+        return;
+    }
+
+    if (isNaN(nombre) || nombre < 1 || nombre > 50) {
+        alert('Veuillez entrer un nombre de tickets valide (1-50)');
+        return;
+    }
+
+    // Vérifier le téléphone (format simple)
+    const telephoneRegex = /^[0-9+\-\s]{10,}$/;
+    if (!telephoneRegex.test(telephone)) {
+        alert('Veuillez entrer un numéro de téléphone valide (minimum 10 chiffres)');
+        return;
+    }
+
+    // Stocker les infos de l'acheteur
+    window.acheteurInfo = { prenom, nom, telephone };
+
+    // Initialiser l'achat
+    ticketsAcheter = nombre;
+    ticketsSelectionnes = [];
+    grillesActuelles = [];
+
+    // Créer la première grille
+    ajouterNouvelleGrille();
+
+    // Afficher le panier
+    document.getElementById('lottery-cart').style.display = 'block';
+    mettreAJourPanier();
+
+    // Cacher le bouton de validation pour l'instant
+    document.getElementById('lottery-validation-section').style.display = 'none';
+}
+
+// Ajouter une nouvelle grille
+function ajouterNouvelleGrille() {
+    const grilleIndex = grillesActuelles.length;
+    const numerosRestants = ticketsAcheter - ticketsSelectionnes.length;
+    
+    if (numerosRestants <= 0) return;
+
+    const nouvelleGrille = {
+        index: grilleIndex,
+        numerosSelectionnes: []
+    };
+
+    grillesActuelles.push(nouvelleGrille);
+    afficherGrilles();
+}
+
+// Afficher toutes les grilles
+function afficherGrilles() {
+    const container = document.getElementById('lottery-grids');
+    container.innerHTML = '';
+
+    grillesActuelles.forEach((grille, idx) => {
+        const grilleDiv = document.createElement('div');
+        grilleDiv.className = 'lottery-grid';
+        grilleDiv.style.cssText = `
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 2px solid ${idx === grillesActuelles.length - 1 ? '#3b82f6' : '#e5e7eb'};
+        `;
+
+        // En-tête de la grille
+        grilleDiv.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h4 style="margin: 0; color: #1e293b;">
+                    Grille ${idx + 1} 
+                    ${idx === grillesActuelles.length - 1 ? 
+                        '<span style="background: #3b82f6; color: white; padding: 3px 10px; border-radius: 15px; font-size: 12px; margin-left: 10px;">Grille active</span>' : 
+                        '<span style="background: #10b981; color: white; padding: 3px 10px; border-radius: 15px; font-size: 12px; margin-left: 10px;">Complétée</span>'}
+                </h4>
+                ${idx === grillesActuelles.length - 1 ? 
+                    `<div style="color: #64748b;">Choisissez 1 numéro par ticket</div>` : 
+                    `<div style="color: #10b981;"><i class="fa fa-check"></i> ${grille.numerosSelectionnes.length} numéro(s) choisi(s)</div>`
+                }
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px;" class="grid-numbers">
+        `;
+
+        // Générer les numéros de 0 à 100
+        for (let i = 0; i <= 100; i++) {
+            const estSelectionne = grille.numerosSelectionnes.includes(i);
+            const estDansAutreGrille = grillesActuelles.some((g, gIdx) => 
+                gIdx !== idx && g.numerosSelectionnes.includes(i)
+            );
+            
+            const estDesactive = estDansAutreGrille || 
+                (idx !== grillesActuelles.length - 1) || // Grilles précédentes verrouillées
+                (idx === grillesActuelles.length - 1 && 
+                 grille.numerosSelectionnes.length >= (ticketsAcheter - ticketsSelectionnes.length + grille.numerosSelectionnes.length) &&
+                 !estSelectionne);
+
+            grilleDiv.innerHTML += `
+                <button 
+                    onclick="selectionnerNumero(${idx}, ${i})"
+                    ${estDesactive ? 'disabled' : ''}
+                    style="
+                        aspect-ratio: 1;
+                        border: none;
+                        border-radius: 8px;
+                        font-weight: bold;
+                        cursor: ${estDesactive ? 'not-allowed' : 'pointer'};
+                        background: ${estSelectionne ? '#3b82f6' : estDansAutreGrille ? '#e5e7eb' : '#f8fafc'};
+                        color: ${estSelectionne ? 'white' : estDansAutreGrille ? '#94a3b8' : '#1e293b'};
+                        border: 2px solid ${estSelectionne ? '#2563eb' : '#e2e8f0'};
+                        transition: all 0.2s ease;
+                        opacity: ${estDesactive ? '0.5' : '1'};
+                        font-size: 14px;
+                    "
+                    onmouseover="this.style.transform='${estDesactive ? 'none' : 'scale(1.05)'}'"
+                    onmouseout="this.style.transform='none'"
+                >
+                    ${i}
+                </button>
+            `;
+        }
+
+        grilleDiv.innerHTML += '</div>';
+        container.appendChild(grilleDiv);
+    });
+
+    // Mettre à jour le compteur de tickets restants
+    const restants = ticketsAcheter - ticketsSelectionnes.length;
+    document.getElementById('tickets-restants').textContent = restants;
+
+    // Si tous les tickets sont sélectionnés, afficher le bouton de validation
+    if (ticketsSelectionnes.length === ticketsAcheter) {
+        document.getElementById('lottery-validation-section').style.display = 'block';
+    }
+}
+
+// Sélectionner un numéro
+function selectionnerNumero(grilleIndex, numero) {
+    const grille = grillesActuelles[grilleIndex];
+    
+    // Vérifier si on peut encore sélectionner
+    if (ticketsSelectionnes.length >= ticketsAcheter) {
+        alert('Vous avez déjà sélectionné tous vos tickets !');
+        return;
+    }
+
+    // Vérifier si le numéro est déjà pris dans une autre grille
+    const numeroDejaPris = grillesActuelles.some((g, idx) => 
+        idx !== grilleIndex && g.numerosSelectionnes.includes(numero)
+    );
+
+    if (numeroDejaPris) {
+        alert('Ce numéro a déjà été choisi dans une autre grille');
+        return;
+    }
+
+    // Si le numéro est déjà sélectionné dans cette grille, le désélectionner
+    if (grille.numerosSelectionnes.includes(numero)) {
+        grille.numerosSelectionnes = grille.numerosSelectionnes.filter(n => n !== numero);
+        ticketsSelectionnes = ticketsSelectionnes.filter(t => t.numero !== numero);
+    } 
+    // Sinon, l'ajouter
+    else {
+        grille.numerosSelectionnes.push(numero);
+        ticketsSelectionnes.push({
+            grille: grilleIndex,
+            numero: numero
+        });
+    }
+
+    // Si c'est la dernière grille et qu'on a atteint le nombre max de tickets pour cette grille
+    if (grilleIndex === grillesActuelles.length - 1) {
+        const maxTicketsCetteGrille = ticketsAcheter - ticketsSelectionnes.length + grille.numerosSelectionnes.length;
+        
+        // Si on a rempli cette grille mais qu'il reste des tickets, ajouter une nouvelle grille
+        if (grille.numerosSelectionnes.length >= maxTicketsCetteGrille && 
+            ticketsSelectionnes.length < ticketsAcheter) {
+            ajouterNouvelleGrille();
+        } else {
+            afficherGrilles();
+        }
+    } else {
+        afficherGrilles();
+    }
+
+    mettreAJourPanier();
+}
+
+// Mettre à jour l'affichage du panier
+function mettreAJourPanier() {
+    const panierList = document.getElementById('selected-tickets-list');
+    const totalSpan = document.getElementById('cart-total');
+    
+    if (ticketsSelectionnes.length === 0) {
+        panierList.innerHTML = '<p style="color: #64748b; text-align: center;">Aucun ticket sélectionné</p>';
+        totalSpan.textContent = '0';
+        return;
+    }
+
+    // Grouper par grille pour l'affichage
+    const ticketsParGrille = {};
+    ticketsSelectionnes.forEach(ticket => {
+        if (!ticketsParGrille[ticket.grille]) {
+            ticketsParGrille[ticket.grille] = [];
+        }
+        ticketsParGrille[ticket.grille].push(ticket.numero);
+    });
+
+    panierList.innerHTML = Object.entries(ticketsParGrille).map(([grille, numeros]) => `
+        <div style="margin-bottom: 10px; padding: 10px; background: white; border-radius: 8px;">
+            <strong style="color: #3b82f6;">Grille ${parseInt(grille) + 1}</strong>
+            <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px;">
+                ${numeros.sort((a,b) => a-b).map(num => 
+                    `<span style="background: #3b82f6; color: white; padding: 3px 8px; border-radius: 15px; font-size: 12px;">
+                        ${num}
+                    </span>`
+                ).join('')}
+            </div>
+        </div>
+    `).join('');
+
+    totalSpan.textContent = ticketsSelectionnes.length * prixTicketLoterie;
+}
+
+// Vider le panier
+function clearCart() {
+    if (confirm('Êtes-vous sûr de vouloir vider le panier ?')) {
+        ticketsSelectionnes = [];
+        grillesActuelles = [];
+        ticketsAcheter = 0;
+        document.getElementById('lottery-grids').innerHTML = '';
+        document.getElementById('tickets-restants').textContent = '0';
+        document.getElementById('lottery-validation-section').style.display = 'none';
+        document.getElementById('lottery-cart').style.display = 'none';
+    }
+}
+
+// Valider l'achat complet
+async function validerAchatComplet() {
+    if (!window.acheteurInfo) {
+        alert('Erreur: informations acheteur manquantes');
+        return;
+    }
+
+    if (ticketsSelectionnes.length !== ticketsAcheter) {
+        alert(`Veuillez sélectionner tous vos tickets (${ticketsSelectionnes.length}/${ticketsAcheter})`);
+        return;
+    }
+
+    const total = ticketsSelectionnes.length * prixTicketLoterie;
+    
+    if (!confirm(`Confirmez-vous l'achat de ${ticketsSelectionnes.length} ticket(s) pour un total de ${total}$ ?`)) {
+        return;
+    }
+
+    try {
+        // Préparer les données pour l'API
+        const achatData = {
+            prenom: window.acheteurInfo.prenom,
+            nom: window.acheteurInfo.nom,
+            telephone: window.acheteurInfo.telephone,
+            tickets: ticketsSelectionnes.map(t => ({
+                grille: t.grille + 1,
+                numero: t.numero
+            })),
+            total: total
+        };
+
+        // Envoyer à l'API (à implémenter côté backend)
+        const result = await apiCall('/loterie/acheter', {
+            method: 'POST',
+            body: achatData
+        });
+
+        if (result.success) {
+            alert(`✅ Achat réussi !\n${ticketsSelectionnes.length} ticket(s) pour ${total}$`);
+            
+            // Générer un reçu
+            genererRecu(achatData);
+            
+            // Réinitialiser
+            initLoterie();
+            
+            // Vider les champs du formulaire
+            document.getElementById('loterie-prenom').value = '';
+            document.getElementById('loterie-nom').value = '';
+            document.getElementById('loterie-telephone').value = '';
+            document.getElementById('loterie-nombre').value = '1';
+        } else {
+            alert('Erreur: ' + result.message);
+        }
+    } catch (error) {
+        console.error('Erreur lors de l\'achat:', error);
+        alert('Erreur lors de l\'achat: ' + error.message);
+    }
+}
+
+// Générer un reçu (optionnel)
+function genererRecu(achatData) {
+    const recu = `
+        🎫 LOTERIE - REÇU D'ACHAT 🎫
+        ${new Date().toLocaleString('fr-FR')}
+        
+        Acheteur: ${achatData.prenom} ${achatData.nom}
+        Téléphone: ${achatData.telephone}
+        
+        Tickets achetés:
+        ${achatData.tickets.map(t => `  • Grille ${t.grille}: numéro ${t.numero}`).join('\n')}
+        
+        Total: ${achatData.total}$
+        
+        Merci et bonne chance !
+    `;
+    
+    console.log(recu);
+    // Optionnel: afficher dans une modal ou télécharger en PDF
+}
     </script>
 </body>
 
