@@ -5,3 +5,4 @@ pywebview
 flask
 flask-cors
 mysql-connector-python
+gunicorn
