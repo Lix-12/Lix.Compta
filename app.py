@@ -11,6 +11,7 @@ from collections import defaultdict
 from functools import wraps
 import mysql.connector
 from mysql.connector import Error
+from loterie import Loterie
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 app.secret_key = 'votre_cle_secrete_tres_secrete_12345'
@@ -704,6 +705,91 @@ def get_lottery_history():
     if row and isinstance(row.get('last_updated'), datetime):
         row['last_updated'] = row['last_updated'].isoformat()
     return jsonify(row or {})
+
+@app.route('/api/loterie/prix', methods=['GET'])
+@login_required
+def get_prix_loterie():
+    """Récupère le prix d'un ticket"""
+    loterie = Loterie()
+    return jsonify({'prix': loterie.get_prix_ticket()})
+
+@app.route('/api/loterie/prix', methods=['POST'])
+@login_required
+def set_prix_loterie():
+    """Modifie le prix d'un ticket (direction uniquement)"""
+    if session['user']['grade'] not in ['PDG', 'CO-PDG', 'DRH']:
+        return jsonify({"error": "Accès refusé"}), 403
+    
+    data = request.get_json()
+    nouveau_prix = data.get('prix')
+    
+    if not nouveau_prix or nouveau_prix < 1:
+        return jsonify({'success': False, 'message': 'Prix invalide'}), 400
+    
+    loterie = Loterie()
+    success = loterie.set_prix_ticket(nouveau_prix)
+    
+    if success:
+        return jsonify({'success': True, 'message': 'Prix mis à jour'})
+    else:
+        return jsonify({'success': False, 'message': 'Erreur lors de la mise à jour'}), 500
+
+@app.route('/api/loterie/acheter', methods=['POST'])
+@login_required
+def acheter_tickets():
+    """Achète des tickets de loterie"""
+    data = request.get_json()
+    
+    # Vérifier les données client
+    client_data = {
+        'prenom': data.get('prenom'),
+        'nom': data.get('nom'),
+        'telephone': data.get('telephone'),
+        'email': data.get('email')
+    }
+    
+    if not all([client_data['prenom'], client_data['nom'], client_data['telephone']]):
+        return jsonify({'success': False, 'message': 'Informations client incomplètes'}), 400
+    
+    # Vérifier les tickets
+    tickets_data = data.get('tickets', [])
+    if not tickets_data:
+        return jsonify({'success': False, 'message': 'Aucun ticket à acheter'}), 400
+    
+    # Vérifier que chaque ticket a 3 numéros uniques
+    for ticket in tickets_data:
+        if len(ticket.get('numeros', [])) != 3:
+            return jsonify({'success': False, 'message': 'Chaque ticket doit avoir 3 numéros'}), 400
+        if len(set(ticket['numeros'])) != 3:
+            return jsonify({'success': False, 'message': 'Les numéros d\'un ticket doivent être uniques'}), 400
+        for num in ticket['numeros']:
+            if num < 0 or num > 100:
+                return jsonify({'success': False, 'message': 'Les numéros doivent être entre 0 et 100'}), 400
+    
+    loterie = Loterie()
+    resultat = loterie.acheter_tickets(
+        client_data=client_data,
+        tickets_data=tickets_data,
+        vendeur=session['username']
+    )
+    
+    return jsonify(resultat)
+
+@app.route('/api/loterie/clients/recherche', methods=['GET'])
+@login_required
+def rechercher_client():
+    """Recherche un client par téléphone"""
+    telephone = request.args.get('telephone')
+    if not telephone:
+        return jsonify({'error': 'Téléphone requis'}), 400
+    
+    loterie = Loterie()
+    client = loterie.get_client_par_telephone(telephone)
+    
+    if client:
+        return jsonify({'client': client})
+    
+    return jsonify({'client': None})
 
 # ─────────────────────────────────────────────
 # SHIFTS
