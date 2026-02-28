@@ -705,6 +705,116 @@ def get_lottery_history():
         row['last_updated'] = row['last_updated'].isoformat()
     return jsonify(row or {})
 
+@app.route('/api/loterie/prix', methods=['GET'])
+@login_required
+def get_prix_loterie():
+    """Récupère le prix d'un ticket"""
+    loterie = Loterie()
+    return jsonify({'prix': loterie.get_prix_ticket()})
+
+@app.route('/api/loterie/prix', methods=['POST'])
+@login_required
+@roles_accepted(['PDG', 'CO-PDG', 'DRH'])
+def set_prix_loterie():
+    """Modifie le prix d'un ticket (direction uniquement)"""
+    data = request.get_json()
+    nouveau_prix = data.get('prix')
+    
+    if not nouveau_prix or nouveau_prix < 1:
+        return jsonify({'success': False, 'message': 'Prix invalide'}), 400
+    
+    loterie = Loterie()
+    success = loterie.set_prix_ticket(nouveau_prix)
+    
+    if success:
+        return jsonify({'success': True, 'message': 'Prix mis à jour'})
+    else:
+        return jsonify({'success': False, 'message': 'Erreur lors de la mise à jour'}), 500
+
+@app.route('/api/loterie/acheter', methods=['POST'])
+@login_required
+def acheter_tickets():
+    """Achète des tickets de loterie"""
+    data = request.get_json()
+    
+    # Vérifier les données client
+    client_data = {
+        'prenom': data.get('prenom'),
+        'nom': data.get('nom'),
+        'telephone': data.get('telephone'),
+        'email': data.get('email')
+    }
+    
+    if not all([client_data['prenom'], client_data['nom'], client_data['telephone']]):
+        return jsonify({'success': False, 'message': 'Informations client incomplètes'}), 400
+    
+    # Vérifier les tickets
+    tickets_data = data.get('tickets', [])
+    if not tickets_data:
+        return jsonify({'success': False, 'message': 'Aucun ticket à acheter'}), 400
+    
+    # Vérifier que chaque ticket a 3 numéros uniques
+    for ticket in tickets_data:
+        if len(ticket.get('numeros', [])) != 3:
+            return jsonify({'success': False, 'message': 'Chaque ticket doit avoir 3 numéros'}), 400
+        if len(set(ticket['numeros'])) != 3:
+            return jsonify({'success': False, 'message': 'Les numéros d\'un ticket doivent être uniques'}), 400
+        for num in ticket['numeros']:
+            if num < 0 or num > 100:
+                return jsonify({'success': False, 'message': 'Les numéros doivent être entre 0 et 100'}), 400
+    
+    loterie = Loterie()
+    resultat = loterie.acheter_tickets(
+        client_data=client_data,
+        tickets_data=tickets_data,
+        vendeur=session['username']
+    )
+    
+    return jsonify(resultat)
+
+@app.route('/api/loterie/clients/recherche', methods=['GET'])
+@login_required
+def rechercher_client():
+    """Recherche un client par téléphone"""
+    telephone = request.args.get('telephone')
+    if not telephone:
+        return jsonify({'error': 'Téléphone requis'}), 400
+    
+    loterie = Loterie()
+    client = loterie.get_client_par_telephone(telephone)
+    
+    if client:
+        tickets = loterie.get_tickets_client(client['id'])
+        return jsonify({
+            'client': client,
+            'tickets': tickets
+        })
+    
+    return jsonify({'client': None})
+
+@app.route('/api/loterie/tickets/recherche', methods=['GET'])
+@login_required
+def rechercher_ticket():
+    """Recherche un ticket par son numéro"""
+    numero = request.args.get('numero')
+    if not numero:
+        return jsonify({'error': 'Numéro de ticket requis'}), 400
+    
+    loterie = Loterie()
+    ticket = loterie.get_ticket(numero)
+    
+    if ticket:
+        return jsonify(ticket)
+    
+    return jsonify({'error': 'Ticket non trouvé'}), 404
+
+@app.route('/api/loterie/stats', methods=['GET'])
+@login_required
+def get_stats_loterie():
+    """Récupère les statistiques de vente"""
+    loterie = Loterie()
+    stats = loterie.get_stats_ventes()
+    return jsonify(stats)
 # ─────────────────────────────────────────────
 # SHIFTS
 # ─────────────────────────────────────────────
@@ -819,6 +929,8 @@ def adverts_logs():
         if isinstance(r['date'], datetime):
             r['date'] = r['date'].isoformat()
     return jsonify(rows)
+
+# LOTERIE
 
 # ─────────────────────────────────────────────
 # DÉMARRAGE
