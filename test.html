@@ -1178,7 +1178,7 @@
                             break;
 
                         case 'users':
-                            if (currentUser && currentUser.grade === 'DRH', 'CO-PDG', 'PDG') {
+                            if (currentUser && ['DRH', 'CO-PDG', 'PDG'].includes(currentUser.grade)) {
                                 document.getElementById('users-access-denied').style.display = 'none';
                                 document.getElementById('users-content').style.display = 'block';
                                 loadUsers();
