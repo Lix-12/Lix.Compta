@@ -12,8 +12,8 @@ from functools import wraps
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 app.secret_key = 'votre_cle_secrete_tres_secrete_12345'
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = False
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 
 # Configuration CORS complète
