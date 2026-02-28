@@ -714,9 +714,10 @@ def get_prix_loterie():
 
 @app.route('/api/loterie/prix', methods=['POST'])
 @login_required
-@roles_accepted(['PDG', 'CO-PDG', 'DRH'])
 def set_prix_loterie():
     """Modifie le prix d'un ticket (direction uniquement)"""
+    if session['user']['grade'] not in ['PDG', 'CO-PDG', 'DRH']:
+        return jsonify({"error": "Accès refusé"}), 403
     data = request.get_json()
     nouveau_prix = data.get('prix')
     
