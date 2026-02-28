@@ -505,7 +505,6 @@
                     <div id="users-list-container" style="max-height: 400px; overflow-y: auto;"></div>
                 </div>
             </div>
-            <!-- À AJOUTER DANS LA SECTION CONTENU PRINCIPAL, APRÈS LA DIV "mes-ventes" -->
             <div id="loterie" class="section-content">
                 <h2>🎟️ Vente de ticket de loterie</h2>
                 
@@ -541,7 +540,7 @@
                                 <i class="fa fa-ticket"></i> Nombre de tickets
                             </label>
                             <div style="display: flex; gap: 10px;">
-                                <input type="number" id="loterie-nombre" min="1" max="50" value="1" 
+                                <input type="number" id="loterie-nombre" min="1" max="20" value="1" 
                                     style="flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 16px;">
                                 <button onclick="acheterTickets()" class="btn" 
                                     style="background: #f59e0b; color: white; padding: 12px 25px; border-radius: 8px; font-weight: bold;">
@@ -555,9 +554,9 @@
                 <!-- Grilles de tickets -->
                 <div id="lottery-grids-container">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h3 style="margin: 0;">🎯 Sélectionnez vos numéros</h3>
+                        <h3 style="margin: 0;">🎯 Sélectionnez 3 numéros par ticket</h3>
                         <div style="background: #f0f9ff; padding: 8px 15px; border-radius: 20px;">
-                            <span id="tickets-restants">0</span> tickets restants à choisir
+                            <span id="tickets-restants">0</span> tickets restants à compléter
                         </div>
                     </div>
 
@@ -573,7 +572,7 @@
                     </div>
                 </div>
 
-                <!-- Panier temporaire (caché par défaut) -->
+                <!-- Panier temporaire -->
                 <div id="lottery-cart" style="display: none; margin-top: 30px; background: #f8f9fa; border-radius: 12px; padding: 20px;">
                     <h3 style="margin-top: 0;">🛒 Tickets sélectionnés</h3>
                     <div id="selected-tickets-list"></div>
@@ -2343,8 +2342,9 @@
             return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
         }
 
+// Variables globales pour la loterie
 let ticketsAcheter = 0;
-let ticketsSelectionnes = [];
+let ticketsSelectionnes = []; // Tableau de tickets { grille, numeros: [n1, n2, n3] }
 let grillesActuelles = [];
 let prixTicketLoterie = 100; // Prix par défaut, sera mis à jour depuis la BDD
 
@@ -2385,8 +2385,8 @@ function acheterTickets() {
         return;
     }
 
-    if (isNaN(nombre) || nombre < 1 || nombre > 50) {
-        alert('Veuillez entrer un nombre de tickets valide (1-50)');
+    if (isNaN(nombre) || nombre < 1 || nombre > 20) {
+        alert('Veuillez entrer un nombre de tickets valide (1-20)');
         return;
     }
 
@@ -2419,13 +2419,13 @@ function acheterTickets() {
 // Ajouter une nouvelle grille
 function ajouterNouvelleGrille() {
     const grilleIndex = grillesActuelles.length;
-    const numerosRestants = ticketsAcheter - ticketsSelectionnes.length;
+    const ticketsRestants = ticketsAcheter - ticketsSelectionnes.length;
     
-    if (numerosRestants <= 0) return;
+    if (ticketsRestants <= 0) return;
 
     const nouvelleGrille = {
         index: grilleIndex,
-        numerosSelectionnes: []
+        tickets: [] // Tableau de tickets pour cette grille, chaque ticket a 3 numeros
     };
 
     grillesActuelles.push(nouvelleGrille);
@@ -2449,62 +2449,187 @@ function afficherGrilles() {
             border: 2px solid ${idx === grillesActuelles.length - 1 ? '#3b82f6' : '#e5e7eb'};
         `;
 
+        // Compter les tickets complétés dans cette grille
+        const ticketsCompletes = grille.tickets.filter(t => t.numeros.length === 3).length;
+        const ticketsEnCours = grille.tickets.filter(t => t.numeros.length > 0 && t.numeros.length < 3).length;
+
         // En-tête de la grille
         grilleDiv.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h4 style="margin: 0; color: #1e293b;">
-                    Grille ${idx + 1} 
-                    ${idx === grillesActuelles.length - 1 ? 
-                        '<span style="background: #3b82f6; color: white; padding: 3px 10px; border-radius: 15px; font-size: 12px; margin-left: 10px;">Grille active</span>' : 
-                        '<span style="background: #10b981; color: white; padding: 3px 10px; border-radius: 15px; font-size: 12px; margin-left: 10px;">Complétée</span>'}
-                </h4>
+                <div>
+                    <h4 style="margin: 0; color: #1e293b;">
+                        Grille ${idx + 1} 
+                        ${idx === grillesActuelles.length - 1 ? 
+                            '<span style="background: #3b82f6; color: white; padding: 3px 10px; border-radius: 15px; font-size: 12px; margin-left: 10px;">Grille active</span>' : 
+                            '<span style="background: #10b981; color: white; padding: 3px 10px; border-radius: 15px; font-size: 12px; margin-left: 10px;">Complétée</span>'}
+                    </h4>
+                    <div style="font-size: 13px; color: #64748b; margin-top: 5px;">
+                        ${ticketsCompletes} ticket(s) complété(s) • ${ticketsEnCours} en cours
+                    </div>
+                </div>
                 ${idx === grillesActuelles.length - 1 ? 
-                    `<div style="color: #64748b;">Choisissez 1 numéro par ticket</div>` : 
-                    `<div style="color: #10b981;"><i class="fa fa-check"></i> ${grille.numerosSelectionnes.length} numéro(s) choisi(s)</div>`
+                    `<div style="color: #3b82f6; font-weight: 500;">
+                        <i class="fa fa-info-circle"></i> 3 numéros par ticket
+                    </div>` : 
+                    ''
                 }
             </div>
-            <div style="display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px;" class="grid-numbers">
         `;
 
-        // Générer les numéros de 0 à 100
-        for (let i = 0; i <= 100; i++) {
-            const estSelectionne = grille.numerosSelectionnes.includes(i);
-            const estDansAutreGrille = grillesActuelles.some((g, gIdx) => 
-                gIdx !== idx && g.numerosSelectionnes.includes(i)
-            );
-            
-            const estDesactive = estDansAutreGrille || 
-                (idx !== grillesActuelles.length - 1) || // Grilles précédentes verrouillées
-                (idx === grillesActuelles.length - 1 && 
-                 grille.numerosSelectionnes.length >= (ticketsAcheter - ticketsSelectionnes.length + grille.numerosSelectionnes.length) &&
-                 !estSelectionne);
+        // Afficher les tickets de cette grille
+        if (grille.tickets.length > 0) {
+            grille.tickets.forEach((ticket, ticketIdx) => {
+                const ticketDiv = document.createElement('div');
+                ticketDiv.style.cssText = `
+                    margin-bottom: 20px;
+                    padding: 15px;
+                    background: #f8fafc;
+                    border-radius: 10px;
+                    border-left: 4px solid ${ticket.numeros.length === 3 ? '#10b981' : '#f59e0b'};
+                `;
 
-            grilleDiv.innerHTML += `
-                <button 
-                    onclick="selectionnerNumero(${idx}, ${i})"
-                    ${estDesactive ? 'disabled' : ''}
-                    style="
-                        aspect-ratio: 1;
-                        border: none;
-                        border-radius: 8px;
-                        font-weight: bold;
-                        cursor: ${estDesactive ? 'not-allowed' : 'pointer'};
-                        background: ${estSelectionne ? '#3b82f6' : estDansAutreGrille ? '#e5e7eb' : '#f8fafc'};
-                        color: ${estSelectionne ? 'white' : estDansAutreGrille ? '#94a3b8' : '#1e293b'};
-                        border: 2px solid ${estSelectionne ? '#2563eb' : '#e2e8f0'};
-                        transition: all 0.2s ease;
-                        opacity: ${estDesactive ? '0.5' : '1'};
-                        font-size: 14px;
-                    "
-                    onmouseover="this.style.transform='${estDesactive ? 'none' : 'scale(1.05)'}'"
-                    onmouseout="this.style.transform='none'"
-                >
-                    ${i}
-                </button>
-            `;
+                ticketDiv.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="font-weight: 600; color: #1e293b;">
+                            Ticket #${ticketIdx + 1}
+                        </span>
+                        <span style="font-size: 12px; color: ${ticket.numeros.length === 3 ? '#10b981' : '#f59e0b'};">
+                            ${ticket.numeros.length}/3 numéros
+                        </span>
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        ${ticket.numeros.map(num => 
+                            `<span style="background: #3b82f6; color: white; padding: 5px 12px; border-radius: 20px; font-size: 14px;">
+                                ${num}
+                            </span>`
+                        ).join('')}
+                        ${ticket.numeros.length < 3 ? 
+                            '<span style="color: #94a3b8; font-style: italic;">Cliquez sur les numéros ci-dessous pour compléter</span>' : 
+                            ''
+                        }
+                    </div>
+                `;
+
+                grilleDiv.appendChild(ticketDiv);
+            });
         }
 
-        grilleDiv.innerHTML += '</div>';
+        // Ajouter un nouveau ticket si c'est la dernière grille et qu'on a pas fini
+        if (idx === grillesActuelles.length - 1) {
+            const ticketsDansCetteGrille = grille.tickets.length;
+            const ticketsRestantsTotal = ticketsAcheter - ticketsSelectionnes.length;
+            
+            // On peut ajouter un nouveau ticket si on a pas atteint le max et que le dernier ticket est complet ou qu'il n'y a pas de ticket
+            if (ticketsDansCetteGrille === 0 || 
+                (grille.tickets[grille.tickets.length - 1] && 
+                 grille.tickets[grille.tickets.length - 1].numeros.length === 3 &&
+                 ticketsSelectionnes.length < ticketsAcheter)) {
+                
+                const nouveauBouton = document.createElement('button');
+                nouveauBouton.onclick = () => ajouterNouveauTicket(idx);
+                nouveauBouton.style.cssText = `
+                    width: 100%;
+                    padding: 15px;
+                    background: #f0f9ff;
+                    border: 2px dashed #3b82f6;
+                    border-radius: 10px;
+                    color: #3b82f6;
+                    font-weight: 600;
+                    cursor: pointer;
+                    margin-top: 10px;
+                    transition: all 0.3s ease;
+                `;
+                nouveauBouton.innerHTML = '<i class="fa fa-plus"></i> Ajouter un nouveau ticket dans cette grille';
+                nouveauBouton.onmouseover = () => {
+                    nouveauBouton.style.background = '#e0f2fe';
+                    nouveauBouton.style.transform = 'translateY(-2px)';
+                };
+                nouveauBouton.onmouseout = () => {
+                    nouveauBouton.style.background = '#f0f9ff';
+                    nouveauBouton.style.transform = 'none';
+                };
+                grilleDiv.appendChild(nouveauBouton);
+            }
+        }
+
+        // Ajouter la grille de sélection des numéros pour la dernière grille
+        if (idx === grillesActuelles.length - 1) {
+            const selectionDiv = document.createElement('div');
+            selectionDiv.style.marginTop = '20px';
+            
+            // Trouver le ticket en cours (le dernier ticket incomplet)
+            const ticketEnCours = grille.tickets.find(t => t.numeros.length < 3) || 
+                                 (grille.tickets.length > 0 ? grille.tickets[grille.tickets.length - 1] : null);
+            
+            if (ticketEnCours && ticketEnCours.numeros.length < 3) {
+                selectionDiv.innerHTML = `
+                    <div style="margin-bottom: 10px; font-weight: 500; color: #1e293b;">
+                        Choisissez le numéro ${ticketEnCours.numeros.length + 1}/3 pour le ticket en cours :
+                    </div>
+                `;
+            } else if (ticketsSelectionnes.length < ticketsAcheter) {
+                selectionDiv.innerHTML = `
+                    <div style="margin-bottom: 10px; font-weight: 500; color: #1e293b;">
+                        Commencez par ajouter un nouveau ticket ↓
+                    </div>
+                `;
+            }
+
+            // Grille des numéros 0-100
+            const numerosGrid = document.createElement('div');
+            numerosGrid.style.cssText = `
+                display: grid;
+                grid-template-columns: repeat(10, 1fr);
+                gap: 8px;
+                margin-top: 10px;
+            `;
+
+            for (let i = 0; i <= 100; i++) {
+                // Vérifier si le numéro est déjà utilisé
+                const estUtilise = ticketsSelectionnes.some(t => t.numeros.includes(i));
+                const estDansTicketEnCours = ticketEnCours ? ticketEnCours.numeros.includes(i) : false;
+                
+                const estDesactive = estUtilise || 
+                                    !ticketEnCours || 
+                                    ticketEnCours.numeros.length >= 3 ||
+                                    ticketsSelectionnes.length >= ticketsAcheter;
+
+                const bouton = document.createElement('button');
+                bouton.onclick = () => selectionnerNumero(idx, i);
+                bouton.disabled = estDesactive;
+                bouton.style.cssText = `
+                    aspect-ratio: 1;
+                    border: none;
+                    border-radius: 8px;
+                    font-weight: bold;
+                    cursor: ${estDesactive ? 'not-allowed' : 'pointer'};
+                    background: ${estDansTicketEnCours ? '#3b82f6' : estUtilise ? '#e5e7eb' : '#f8fafc'};
+                    color: ${estDansTicketEnCours ? 'white' : estUtilise ? '#94a3b8' : '#1e293b'};
+                    border: 2px solid ${estDansTicketEnCours ? '#2563eb' : '#e2e8f0'};
+                    transition: all 0.2s ease;
+                    opacity: ${estDesactive ? '0.5' : '1'};
+                    font-size: 14px;
+                `;
+                bouton.textContent = i;
+                
+                bouton.onmouseover = () => {
+                    if (!estDesactive) {
+                        bouton.style.transform = 'scale(1.05)';
+                        bouton.style.boxShadow = '0 2px 8px rgba(59,130,246,0.3)';
+                    }
+                };
+                bouton.onmouseout = () => {
+                    bouton.style.transform = 'none';
+                    bouton.style.boxShadow = 'none';
+                };
+                
+                numerosGrid.appendChild(bouton);
+            }
+
+            selectionDiv.appendChild(numerosGrid);
+            grilleDiv.appendChild(selectionDiv);
+        }
+
         container.appendChild(grilleDiv);
     });
 
@@ -2518,6 +2643,23 @@ function afficherGrilles() {
     }
 }
 
+// Ajouter un nouveau ticket dans une grille
+function ajouterNouveauTicket(grilleIndex) {
+    const grille = grillesActuelles[grilleIndex];
+    
+    // Vérifier si on peut ajouter un ticket
+    if (ticketsSelectionnes.length >= ticketsAcheter) {
+        alert('Vous avez déjà atteint le nombre maximum de tickets');
+        return;
+    }
+
+    grille.tickets.push({
+        numeros: []
+    });
+
+    afficherGrilles();
+}
+
 // Sélectionner un numéro
 function selectionnerNumero(grilleIndex, numero) {
     const grille = grillesActuelles[grilleIndex];
@@ -2528,45 +2670,34 @@ function selectionnerNumero(grilleIndex, numero) {
         return;
     }
 
-    // Vérifier si le numéro est déjà pris dans une autre grille
-    const numeroDejaPris = grillesActuelles.some((g, idx) => 
-        idx !== grilleIndex && g.numerosSelectionnes.includes(numero)
-    );
-
-    if (numeroDejaPris) {
-        alert('Ce numéro a déjà été choisi dans une autre grille');
+    // Trouver le ticket en cours (le dernier ticket incomplet)
+    let ticketEnCours = grille.tickets.find(t => t.numeros.length < 3);
+    
+    if (!ticketEnCours) {
+        alert('Veuillez d\'abord ajouter un nouveau ticket');
         return;
     }
 
-    // Si le numéro est déjà sélectionné dans cette grille, le désélectionner
-    if (grille.numerosSelectionnes.includes(numero)) {
-        grille.numerosSelectionnes = grille.numerosSelectionnes.filter(n => n !== numero);
-        ticketsSelectionnes = ticketsSelectionnes.filter(t => t.numero !== numero);
-    } 
-    // Sinon, l'ajouter
-    else {
-        grille.numerosSelectionnes.push(numero);
+    // Vérifier si le numéro est déjà utilisé
+    const numeroDejaPris = ticketsSelectionnes.some(t => t.numeros.includes(numero));
+    
+    if (numeroDejaPris) {
+        alert('Ce numéro a déjà été choisi pour un autre ticket');
+        return;
+    }
+
+    // Ajouter le numéro au ticket en cours
+    ticketEnCours.numeros.push(numero);
+
+    // Si le ticket est complet, l'ajouter aux tickets sélectionnés
+    if (ticketEnCours.numeros.length === 3) {
         ticketsSelectionnes.push({
             grille: grilleIndex,
-            numero: numero
+            numeros: [...ticketEnCours.numeros]
         });
     }
 
-    // Si c'est la dernière grille et qu'on a atteint le nombre max de tickets pour cette grille
-    if (grilleIndex === grillesActuelles.length - 1) {
-        const maxTicketsCetteGrille = ticketsAcheter - ticketsSelectionnes.length + grille.numerosSelectionnes.length;
-        
-        // Si on a rempli cette grille mais qu'il reste des tickets, ajouter une nouvelle grille
-        if (grille.numerosSelectionnes.length >= maxTicketsCetteGrille && 
-            ticketsSelectionnes.length < ticketsAcheter) {
-            ajouterNouvelleGrille();
-        } else {
-            afficherGrilles();
-        }
-    } else {
-        afficherGrilles();
-    }
-
+    afficherGrilles();
     mettreAJourPanier();
 }
 
@@ -2583,23 +2714,33 @@ function mettreAJourPanier() {
 
     // Grouper par grille pour l'affichage
     const ticketsParGrille = {};
-    ticketsSelectionnes.forEach(ticket => {
+    ticketsSelectionnes.forEach((ticket, idx) => {
         if (!ticketsParGrille[ticket.grille]) {
             ticketsParGrille[ticket.grille] = [];
         }
-        ticketsParGrille[ticket.grille].push(ticket.numero);
+        ticketsParGrille[ticket.grille].push({
+            index: idx + 1,
+            numeros: ticket.numeros
+        });
     });
 
-    panierList.innerHTML = Object.entries(ticketsParGrille).map(([grille, numeros]) => `
-        <div style="margin-bottom: 10px; padding: 10px; background: white; border-radius: 8px;">
-            <strong style="color: #3b82f6;">Grille ${parseInt(grille) + 1}</strong>
-            <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px;">
-                ${numeros.sort((a,b) => a-b).map(num => 
-                    `<span style="background: #3b82f6; color: white; padding: 3px 8px; border-radius: 15px; font-size: 12px;">
-                        ${num}
-                    </span>`
-                ).join('')}
-            </div>
+    panierList.innerHTML = Object.entries(ticketsParGrille).map(([grille, tickets]) => `
+        <div style="margin-bottom: 15px; padding: 15px; background: white; border-radius: 8px;">
+            <strong style="color: #3b82f6; display: block; margin-bottom: 10px;">
+                Grille ${parseInt(grille) + 1}
+            </strong>
+            ${tickets.map(t => `
+                <div style="margin-bottom: 8px; padding: 8px; background: #f8fafc; border-radius: 6px;">
+                    <span style="font-size: 13px; color: #64748b;">Ticket #${t.index}:</span>
+                    <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px;">
+                        ${t.numeros.sort((a,b) => a-b).map(num => 
+                            `<span style="background: #3b82f6; color: white; padding: 3px 10px; border-radius: 15px; font-size: 13px;">
+                                ${num}
+                            </span>`
+                        ).join('')}
+                    </div>
+                </div>
+            `).join('')}
         </div>
     `).join('');
 
@@ -2627,7 +2768,7 @@ async function validerAchatComplet() {
     }
 
     if (ticketsSelectionnes.length !== ticketsAcheter) {
-        alert(`Veuillez sélectionner tous vos tickets (${ticketsSelectionnes.length}/${ticketsAcheter})`);
+        alert(`Veuillez compléter tous vos tickets (${ticketsSelectionnes.length}/${ticketsAcheter})`);
         return;
     }
 
@@ -2643,11 +2784,13 @@ async function validerAchatComplet() {
             prenom: window.acheteurInfo.prenom,
             nom: window.acheteurInfo.nom,
             telephone: window.acheteurInfo.telephone,
-            tickets: ticketsSelectionnes.map(t => ({
+            tickets: ticketsSelectionnes.map((t, idx) => ({
+                ticket_id: idx + 1,
                 grille: t.grille + 1,
-                numero: t.numero
+                numeros: t.numeros
             })),
-            total: total
+            total: total,
+            date: new Date().toISOString()
         };
 
         // Envoyer à l'API (à implémenter côté backend)
@@ -2679,7 +2822,7 @@ async function validerAchatComplet() {
     }
 }
 
-// Générer un reçu (optionnel)
+// Générer un reçu
 function genererRecu(achatData) {
     const recu = `
         🎫 LOTERIE - REÇU D'ACHAT 🎫
@@ -2689,7 +2832,9 @@ function genererRecu(achatData) {
         Téléphone: ${achatData.telephone}
         
         Tickets achetés:
-        ${achatData.tickets.map(t => `  • Grille ${t.grille}: numéro ${t.numero}`).join('\n')}
+        ${achatData.tickets.map(t => 
+            `  • Ticket #${t.ticket_id} (Grille ${t.grille}): ${t.numeros.sort((a,b)=>a-b).join(' - ')}`
+        ).join('\n')}
         
         Total: ${achatData.total}$
         
@@ -2697,7 +2842,8 @@ function genererRecu(achatData) {
     `;
     
     console.log(recu);
-    // Optionnel: afficher dans une modal ou télécharger en PDF
+    
+    alert(recu);
 }
     </script>
 </body>
