@@ -195,52 +195,6 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
-        .cart {
-            flex: 1;
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 20px;
-            max-height: 600px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .cart h3 {
-            text-align: center;
-            color: #1e293b;
-            margin-top: 0;
-        }
-
-        .cart-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            padding: 12px;
-            background: #e2e8f0;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-
-        .cart-item input {
-            width: 60px;
-            padding: 5px;
-            text-align: center;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        .cart-total {
-            margin-top: auto;
-            padding-top: 20px;
-            font-weight: bold;
-            text-align: center;
-            font-size: 20px;
-            color: #1e293b;
-            border-top: 2px solid #1e293b;
-        }
-
         .validate-btn {
             margin-top: 15px;
             padding: 15px;
@@ -699,7 +653,6 @@
         const API_BASE = '/api';
         let currentUser = null;
         let chart = null;
-        let cart = [];
         let chartData = null;
         let isServerOnline = false;
         let isRequestInProgress = false;
@@ -1394,101 +1347,6 @@
             }
         }
 
-        // Gestion du panier
-        function addToCart(name, price) {
-            const existing = cart.find(item => item.name === name);
-            if (existing) {
-                existing.qty++;
-            } else {
-                cart.push({ name, price, qty: 1 });
-            }
-            renderCart();
-        }
-
-        function updateQty(index, newQty) {
-            cart[index].qty = Math.max(1, parseInt(newQty) || 1);
-            renderCart();
-        }
-
-        function removeFromCart(index) {
-            cart.splice(index, 1);
-            renderCart();
-        }
-
-        function renderCart() {
-            const container = document.getElementById('cart-items');
-            container.innerHTML = '';
-
-            let total = 0;
-
-            cart.forEach((item, index) => {
-                total += item.price * item.qty;
-
-                container.innerHTML += `
-            <div class="cart-item">
-                <div>
-                    <strong>${item.name}</strong><br>
-                    <small>${item.price}$ × ${item.qty}</small>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <input type="number" min="1" value="${item.qty}" 
-                           onchange="updateQty(${index}, this.value)">
-                    <button onclick="removeFromCart(${index})" 
-                            style="background: #ef4444; color: white; border: none; 
-                                   border-radius: 4px; padding: 4px 8px; cursor: pointer;">×</button>
-                </div>
-            </div>
-        `;
-            });
-
-            document.getElementById('cart-total').innerText = total;
-        }
-
-        async function validateCart() {
-            if (cart.length === 0) {
-                alert("Le panier est vide !");
-                return;
-            }
-
-            const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-
-            try {
-                console.log("Envoi du panier:", cart);
-                const result = await apiCall('/cart', {
-                    method: 'POST',
-                    body: cart
-                });
-
-                if (result.success) {
-                    // Recharger les données globales ET personnelles
-                    await Promise.all([
-                        loadGlobalData(),
-                        loadMyData()
-                    ]);
-
-                    // Mettre à jour le graphique d'accueil seulement si on est sur la page accueil
-                    const currentPage = document.querySelector('.chart-container[style*="display: block"]') ||
-                        document.querySelector('.section-content[style*="display: block"]');
-
-                    if (currentPage && currentPage.id === 'accueil') {
-                        if (globalChartData) {
-                            createChart(globalChartData, 'myChart', 'accueil');
-                        }
-                    }
-
-                    alert(`✅ Commande validée !\n${cart.length} article(s) pour ${total}$`);
-
-                    // Vider le panier
-                    cart = [];
-                    renderCart();
-                } else {
-                    alert("Erreur: " + result.message);
-                }
-            } catch (error) {
-                console.error("Erreur lors de la validation :", error);
-                alert("❌ Erreur lors de la validation de la commande");
-            }
-        }
         // Fonction utilitaire pour les appels API
         async function apiCall(endpoint, options = {}) {
             const config = {
