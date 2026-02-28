@@ -765,12 +765,12 @@ def acheter_tickets():
         for num in ticket['numeros']:
             if num < 0 or num > 100:
                 return jsonify({'success': False, 'message': 'Les numéros doivent être entre 0 et 100'}), 400
-    
+    username = session['user']['username']
     loterie = Loterie()
     resultat = loterie.acheter_tickets(
         client_data=client_data,
         tickets_data=tickets_data,
-        vendeur=session['username']
+        vendeur=username
     )
     
     return jsonify(resultat)
