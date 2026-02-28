@@ -1,4 +1,3 @@
-import webview
 import os
 import json
 from datetime import datetime, timedelta
@@ -229,23 +228,8 @@ def main():
     
     # Créer l'instance de l'API
     api = Api()
-    
-    # Créer la fenêtre WebView
-    window = webview.create_window(
-        title="Lix Comptabilité",
-        url=url,
-        width=1900,
-        height=900,
-        resizable=True,
-        js_api=api,
-        min_size=(1200, 700)
-    )
-    
     print("Lancement de l'application...")
     print(f"Fichier HTML : {html_file}")
-    
-    # Démarrer l'application WebView
-    webview.start(debug=True)
 
 if __name__ == "__main__":
     main()
