@@ -49,7 +49,6 @@ class Loterie:
                         prenom VARCHAR(100) NOT NULL,
                         nom VARCHAR(100) NOT NULL,
                         telephone VARCHAR(20) NOT NULL,
-                        email VARCHAR(255),
                         date_creation DATETIME NOT NULL,
                         total_achats INT DEFAULT 0,
                         nb_tickets_achetes INT DEFAULT 0,
@@ -112,7 +111,7 @@ class Loterie:
     
     # ========== GESTION DES CLIENTS ==========
     
-    def trouver_ou_creer_client(self, prenom, nom, telephone, email=None, notes=None):
+    def trouver_ou_creer_client(self, prenom, nom, telephone, notes=None):
         conn = get_db()
         if not conn:
             return None
@@ -140,9 +139,9 @@ class Loterie:
             else:
                 cursor.execute('''
                     INSERT INTO loterie_clients 
-                    (prenom, nom, telephone, email, date_creation, derniere_activite, notes)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                ''', (prenom, nom, telephone, email, maintenant, maintenant, notes))
+                    (prenom, nom, telephone, date_creation, derniere_activite, notes)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                ''', (prenom, nom, telephone, maintenant, maintenant, notes))
                 client_id = cursor.lastrowid
             
             conn.commit()
@@ -255,7 +254,6 @@ class Loterie:
                 prenom=client_data['prenom'],
                 nom=client_data['nom'],
                 telephone=client_data['telephone'],
-                email=client_data.get('email')
             )
             
             if not client_id:
