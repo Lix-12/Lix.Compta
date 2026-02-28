@@ -3,5 +3,5 @@ matplotlib
 streamlit
 pywebview
 flask
-
-flask_cors
+flask-cors
+mysql-connector-python
