@@ -98,7 +98,6 @@ class Api:
             # Créer le fichier avec des données par défaut vides
             default_data = {
                 "ventes_historique": [],  # Liste de toutes les ventes avec timestamps
-                "services_vendus": {},    # Compteur des services vendus
                 "ventes_par_jour": {},    # Ventes groupées par jour
                 "total_mensuel": 0,       # Total du mois en cours
                 "salaires": [3000, 3200, 3100, 3300, 3150, 3050, 3250],  # Données fixes
@@ -179,7 +178,6 @@ class Api:
         except FileNotFoundError:
             data = {
                 "ventes_historique": [],
-                "services_vendus": {},
                 "ventes_par_jour": {},
                 "total_mensuel": 0,
                 "salaires": [3000, 3200, 3100, 3300, 3150, 3050, 3250],
@@ -198,17 +196,6 @@ class Api:
             data["ventes_historique"] = []
         
         data["ventes_historique"].append(nouvelle_vente)
-        
-        # Mettre à jour les compteurs de services
-        if "services_vendus" not in data:
-            data["services_vendus"] = {}
-            
-        for item in cart_items:
-            service_name = item["name"]
-            if service_name in data["services_vendus"]:
-                data["services_vendus"][service_name] += item["qty"]
-            else:
-                data["services_vendus"][service_name] = item["qty"]
         
         # Sauvegarder
         self.saveData(data)
