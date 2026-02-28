@@ -330,7 +330,7 @@
           </div>
         </div>
         <a onclick="changepage('accueil')" href="#"><i class="fa fa-home"></i> Accueil</a>
-        <a onclick="changepage('services')" href="#"><i class="fa fa-cogs"></i> Services</a>
+        <a onclick="changepage('loterie')" href="#"><i class="fa fa-cogs"></i> Loterie</a>
         <a onclick="changepage('mes-ventes')" href="#"><i class="fa fa-line-chart"></i> Mes ventes</a>
     </div>
       <div class="direction-sidebar" id="direction-sidebar">
@@ -616,16 +616,19 @@
           <small id="settings-status" style="display:block; margin-top:8px; color:#64748b;"></small>
         </div>
 
-        <!-- Gestion des Services -->
+        <!-- Gestion de la loterie -->
         <div style="background:#f8f9fa; border-radius:12px; padding:16px; border:1px solid #e5e7eb; margin-bottom:20px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <h3 style="margin:0;">Services & Prix</h3>
-                <button class="btn btn-primary" onclick="addNewService()">
-                    <i class="fa fa-plus"></i> Ajouter Service
+                <h3 style="margin:0;">
+                    <i class="fa fa-ticket" style="color:#f59e0b; margin-right:8px;"></i>
+                    Prix de la Loterie
+                </h3>
+                <button class="btn" style="background:#f59e0b; color:white;" onclick="openLotteryModal()">
+                    <i class="fa fa-edit"></i> Modifier le prix
                 </button>
             </div>
-            <div id="services-list" style="display:grid; gap:10px;">
-                <!-- Les services seront chargés ici dynamiquement -->
+            <div id="lottery-current-price" style="font-size:18px; font-weight:bold; color:#1e293b;">
+                Chargement...
             </div>
         </div>
 
@@ -1221,99 +1224,141 @@ function changepage(page) {
         }
     })
   }
-}// ...existing code...
-async function addNewService() {
-    // Créer la modal d'ajout de service
-    const modal = document.createElement('div');
-    modal.id = 'add-service-modal';
-    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000;';
-    
-    modal.innerHTML = `
-        <div class="modal-content" style="background:white; padding:20px; border-radius:8px; min-width:300px;">
-            <h3>Ajouter un nouveau service</h3>
-            <form id="new-service-form" style="display:flex; flex-direction:column; gap:10px;">
-                <input type="text" id="service-name" placeholder="Nom du service" required>
-                <input type="number" id="service-price" placeholder="Prix" required step="0.01">
-                <div style="display:flex; gap:10px; justify-content:flex-end;">
-                    <button type="button" onclick="closeServiceModal()">Annuler</button>
-                    <button type="submit">Ajouter</button>
-                </div>
-            </form>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-
-    // Gérer la soumission du formulaire
-    document.getElementById('new-service-form').onsubmit = async (e) => {
-        e.preventDefault();
-        
-        const name = document.getElementById('service-name').value;
-        const price = parseFloat(document.getElementById('service-price').value);
-        
-        try {
-            const response = await apiCall('/services/add', {
-                method: 'POST',
-                body: { name, price }
-            });
-            
-            if (response.success) {
-                alert('Service ajouté avec succès !');
-                closeServiceModal();
-                // Recharger la liste des services si nécessaire
-                loadServices();
-            } else {
-                alert('Erreur lors de l\'ajout du service');
-            }
-        } catch (error) {
-            console.error('Erreur:', error);
-            alert('Erreur lors de l\'ajout du service');
-        }
-    };
 }
 
-function closeServiceModal() {
-    const modal = document.getElementById('add-service-modal');
+async function openLotteryModal() {
+    // Créer la modal de loterie
+    const modal = document.createElement('div');
+    modal.id = 'lottery-modal';
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000;';
+    
+    try {
+        // Récupérer les paramètres actuels de la loterie
+        const settings = await apiCall('/settings');
+        const currentPrice = settings.lottery_price || 100;
+        
+        modal.innerHTML = `
+            <div class="modal-content" style="background:white; padding:25px; border-radius:15px; min-width:350px; max-width:90%;">
+                <h2 style="margin:0 0 20px 0; color:#1e293b; display:flex; align-items:center; gap:10px;">
+                    <i class="fa fa-ticket" style="color:#f59e0b;"></i>
+                    Gestion de la Loterie
+                </h2>
+                
+                <div style="margin-bottom:25px;">
+                    <div style="background:#f0f9ff; padding:15px; border-radius:10px; margin-bottom:20px;">
+                        <p style="margin:0 0 10px 0; color:#0369a1; font-weight:500;">
+                            <i class="fa fa-info-circle"></i> Prix actuel du ticket
+                        </p>
+                        <p style="font-size:32px; font-weight:bold; color:#0369a1; margin:0;">
+                            ${currentPrice}$ <span style="font-size:16px; font-weight:normal; color:#64748b;">par ticket</span>
+                        </p>
+                    </div>
+                    
+                    <label style="display:block; margin-bottom:10px; font-weight:500; color:#1e293b;">
+                        Nouveau prix du ticket
+                    </label>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <input type="number" 
+                               id="lottery-price" 
+                               min="1" 
+                               value="${currentPrice}" 
+                               style="flex:1; padding:12px; border:2px solid #e2e8f0; border-radius:10px; font-size:16px;">
+                        <span style="font-size:18px; font-weight:bold;">$</span>
+                    </div>
+                    
+                    <div style="margin-top:20px; background:#fffbeb; padding:15px; border-radius:10px; border-left:4px solid #f59e0b;">
+                        <p style="margin:0; color:#92400e;">
+                            <i class="fa fa-lightbulb-o" style="margin-right:8px;"></i>
+                            Les gains de la loterie seront automatiquement ajustés en fonction du nouveau prix.
+                        </p>
+                    </div>
+                </div>
+                
+                <div style="display:flex; gap:10px; justify-content:flex-end; border-top:1px solid #e2e8f0; padding-top:20px;">
+                    <button onclick="closeLotteryModal()" 
+                            class="btn" 
+                            style="background:#6b7280; color:white; padding:12px 24px; border-radius:8px;">
+                        <i class="fa fa-times"></i> Annuler
+                    </button>
+                    <button onclick="saveLotteryPrice()" 
+                            class="btn btn-success" 
+                            style="background:#f59e0b; color:white; padding:12px 24px; border-radius:8px;">
+                        <i class="fa fa-save"></i> Enregistrer le prix
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Focus sur l'input
+        setTimeout(() => {
+            document.getElementById('lottery-price').focus();
+        }, 100);
+        
+    } catch (error) {
+        console.error('Erreur chargement prix loterie:', error);
+        alert('Erreur lors du chargement des paramètres de la loterie');
+    }
+}
+
+async function saveLotteryPrice() {
+    const priceInput = document.getElementById('lottery-price');
+    const newPrice = parseInt(priceInput.value);
+    
+    if (isNaN(newPrice) || newPrice < 1) {
+        alert('Veuillez entrer un prix valide (minimum 1$)');
+        return;
+    }
+    
+    try {
+        const result = await apiCall('/settings/update', {
+            method: 'POST',
+            body: { lottery_price: newPrice }
+        });
+        
+        if (result.success) {
+            alert(`✅ Prix de la loterie modifié avec succès !\nNouveau prix : ${newPrice}$`);
+            closeLotteryModal();
+            
+            // Recharger les paramètres
+            await loadSettings();
+            
+            // Si on est sur la page des réglages, mettre à jour l'affichage
+            if (document.getElementById('settings').style.display === 'block') {
+                await loadSettings();
+            }
+        } else {
+            alert('❌ Erreur : ' + result.message);
+        }
+    } catch (error) {
+        console.error('Erreur lors de la modification du prix:', error);
+        alert('❌ Erreur : ' + error.message);
+    }
+}
+
+function closeLotteryModal() {
+    const modal = document.getElementById('lottery-modal');
     if (modal) {
         modal.remove();
     }
 }
 
-async function loadServices() {
+async function displayLotteryPrice() {
     try {
-        const services = await apiCall('/services');
-        // Mettre à jour l'interface avec les services
-        const container = document.getElementById('services-list');
-        if (container) {
-            container.innerHTML = services.map(service => `
-                <div class="service-item">
-                    <span>${service.name}</span>
-                    <span>${service.price}€</span>
-                </div>
-            `).join('');
+        const settings = await apiCall('/settings');
+        const priceContainer = document.getElementById('lottery-current-price');
+        if (priceContainer) {
+            priceContainer.innerHTML = `
+                <span style="font-size:24px; color:#f59e0b;">${settings.lottery_price || 100}$</span>
+                <span style="font-size:14px; color:#64748b; margin-left:10px;">par ticket</span>
+            `;
         }
     } catch (error) {
-        console.error('Erreur chargement services:', error);
-    }
-}
-async function displayServices() {
-    try {
-        const services = await apiCall('/services');
-        const container = document.getElementById('services-grid');
-        if (!container) return;
-        
-        container.innerHTML = services.map(service => `
-            <button class="service-btn" onclick="addToCart('${service.name}', ${service.price})">
-                🔧 ${service.name}<br>
-                <small>${service.price}$</small>
-            </button>
-        `).join('');
-    } catch (error) {
-        console.error('Erreur chargement services:', error);
+        console.error('Erreur affichage prix loterie:', error);
     }
 }
 
-// ...existing code...
 // Gestion du panier
 function addToCart(name, price) {
     const existing = cart.find(item => item.name === name);
@@ -1940,7 +1985,8 @@ async function loadSettings() {
         if (t) t.value = settings.advert_title || '';
         if (i) i.value = settings.advert_image || '';
         if (x) x.value = settings.advert_text || '';
-        
+        // Afficher le prix de la loterie
+        await displayLotteryPrice();
         // Charger la liste des services
         await loadServicesList();
     } catch (error) {
