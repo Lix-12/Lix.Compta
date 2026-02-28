@@ -1,7 +1,6 @@
-# loterie.py
+# loterie.py corrigé
 import mysql.connector
 from mysql.connector import Error
-import json
 from datetime import datetime
 import random
 import string
@@ -38,57 +37,67 @@ class Loterie:
         cursor = conn.cursor()
         
         try:
-            # Table des clients de loterie
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS loterie_clients (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    prenom VARCHAR(100) NOT NULL,
-                    nom VARCHAR(100) NOT NULL,
-                    telephone VARCHAR(20) NOT NULL,
-                    email VARCHAR(255),
-                    date_creation DATETIME NOT NULL,
-                    total_achats INT DEFAULT 0,
-                    nb_tickets_achetes INT DEFAULT 0,
-                    derniere_activite DATETIME,
-                    notes TEXT,
-                    INDEX idx_telephone (telephone)
-                ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
-            ''')
+            # Vérifier d'abord si les tables existent pour éviter les erreurs de foreign key
+            cursor.execute("SHOW TABLES LIKE 'loterie_clients'")
+            table_exists = cursor.fetchone()
             
-            # Table des tickets de loterie
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS loterie_tickets (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    numero_ticket VARCHAR(50) UNIQUE NOT NULL,
-                    client_id INT NOT NULL,
-                    grille INT NOT NULL,
-                    numeros VARCHAR(50) NOT NULL,
-                    prix INT NOT NULL,
-                    date_achat DATETIME NOT NULL,
-                    vendu_par VARCHAR(50) NOT NULL,
-                    INDEX idx_client (client_id),
-                    INDEX idx_date (date_achat),
-                    FOREIGN KEY (client_id) REFERENCES loterie_clients(id) ON DELETE CASCADE,
-                    FOREIGN KEY (vendu_par) REFERENCES users(username) ON DELETE CASCADE
-                ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
-            ''')
+            if not table_exists:
+                # Table des clients de loterie
+                cursor.execute('''
+                    CREATE TABLE loterie_clients (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        prenom VARCHAR(100) NOT NULL,
+                        nom VARCHAR(100) NOT NULL,
+                        telephone VARCHAR(20) NOT NULL,
+                        email VARCHAR(255),
+                        date_creation DATETIME NOT NULL,
+                        total_achats INT DEFAULT 0,
+                        nb_tickets_achetes INT DEFAULT 0,
+                        derniere_activite DATETIME,
+                        notes TEXT,
+                        INDEX idx_telephone (telephone)
+                    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                ''')
             
-            # Table des paramètres de loterie
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS loterie_settings (
-                    id INT PRIMARY KEY DEFAULT 1,
-                    prix_ticket INT DEFAULT 100,
-                    CHECK (id = 1)
-                ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
-            ''')
+            cursor.execute("SHOW TABLES LIKE 'loterie_settings'")
+            table_exists = cursor.fetchone()
             
-            # Insérer les paramètres par défaut si nécessaire
-            cursor.execute('SELECT * FROM loterie_settings WHERE id = 1')
-            result = cursor.fetchone()
-            if not result:
+            if not table_exists:
+                # Table des paramètres de loterie
+                cursor.execute('''
+                    CREATE TABLE loterie_settings (
+                        id INT PRIMARY KEY DEFAULT 1,
+                        prix_ticket INT DEFAULT 100,
+                        CHECK (id = 1)
+                    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                ''')
+                
+                # Insérer les paramètres par défaut
                 cursor.execute('''
                     INSERT INTO loterie_settings (id, prix_ticket)
                     VALUES (1, 100)
+                ''')
+            
+            cursor.execute("SHOW TABLES LIKE 'loterie_tickets'")
+            table_exists = cursor.fetchone()
+            
+            if not table_exists:
+                # Table des tickets de loterie - SANS CONTRAINTE FOREIGN KEY pour éviter les erreurs
+                cursor.execute('''
+                    CREATE TABLE loterie_tickets (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        numero_ticket VARCHAR(50) UNIQUE NOT NULL,
+                        client_id INT NOT NULL,
+                        grille INT NOT NULL,
+                        numeros VARCHAR(50) NOT NULL,
+                        prix INT NOT NULL,
+                        date_achat DATETIME NOT NULL,
+                        vendu_par VARCHAR(50) NOT NULL,
+                        INDEX idx_client (client_id),
+                        INDEX idx_date (date_achat),
+                        INDEX idx_vendeur (vendu_par),
+                        FOREIGN KEY (client_id) REFERENCES loterie_clients(id) ON DELETE CASCADE
+                    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
                 ''')
             
             conn.commit()
@@ -241,6 +250,7 @@ class Loterie:
         cursor = conn.cursor(dictionary=True)
         
         try:
+            # 1. Trouver ou créer le client
             client_id = self.trouver_ou_creer_client(
                 prenom=client_data['prenom'],
                 nom=client_data['nom'],
@@ -254,11 +264,13 @@ class Loterie:
                     'message': "Erreur lors de la création du client"
                 }
             
+            # 2. Récupérer le prix du ticket
             prix_unitaire = self.get_prix_ticket()
             prix_total = prix_unitaire * len(tickets_data)
             date_achat = datetime.now()
             tickets_crees = []
             
+            # 3. Créer les tickets
             for ticket in tickets_data:
                 numero_ticket = self._generer_numero_ticket_unique()
                 numeros_str = ','.join(str(n) for n in sorted(ticket['numeros']))
@@ -284,6 +296,7 @@ class Loterie:
                     'prix': prix_unitaire
                 })
             
+            # 4. Mettre à jour les stats du client
             cursor.execute('''
                 UPDATE loterie_clients 
                 SET total_achats = total_achats + %s,
