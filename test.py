@@ -58,143 +58,108 @@ DEFAULT_GRADES = {
     "PDG": {"commission": 20, "salaire_fixe": 8000}
 }
 
-# ...existing code...
+# --- Lottery Management ---
+LOTTERY_FILE = "lottery.json"
 
-# --- Services Management ---
-SERVICES_FILE = "services.json"
-
-def load_services():
-    """Charge les services depuis le fichier JSON"""
+def load_lottery_settings():
+    """Charge les paramètres de la loterie"""
     try:
-        with open(SERVICES_FILE, 'r', encoding='utf-8') as f:
+        with open(LOTTERY_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     except FileNotFoundError:
-        return []
+        # Paramètres par défaut
+        default_settings = {
+            "ticket_price": 100,
+            "last_updated": datetime.now().isoformat(),
+            "updated_by": "system"
+        }
+        save_lottery_settings(default_settings)
+        return default_settings
     except Exception as e:
-        print(f"Erreur lors du chargement des services: {e}")
-        return []
+        print(f"Erreur lors du chargement de la loterie: {e}")
+        return {"ticket_price": 100}
 
-def save_services(services):
-    """Sauvegarde les services dans le fichier JSON"""
+def save_lottery_settings(settings):
+    """Sauvegarde les paramètres de la loterie"""
     try:
-        with open(SERVICES_FILE, 'w', encoding='utf-8') as f:
-            json.dump(services, f, indent=2, ensure_ascii=False)
+        with open(LOTTERY_FILE, 'w', encoding='utf-8') as f:
+            json.dump(settings, f, indent=2, ensure_ascii=False)
     except Exception as e:
-        print(f"Erreur lors de la sauvegarde des services: {e}")
+        print(f"Erreur lors de la sauvegarde de la loterie: {e}")
 
-@app.route('/api/services', methods=['GET', 'OPTIONS'])
-def get_services():
-    """Route pour obtenir la liste des services"""
+@app.route('/api/lottery/price', methods=['GET', 'OPTIONS'])
+def get_lottery_price():
+    """Route pour obtenir le prix de la loterie"""
     if request.method == 'OPTIONS':
         return '', 200
         
     if 'user' not in session:
         return jsonify({"error": "Non authentifié"}), 401
-        
-    services = load_services()
-    return jsonify(services)
-@app.route('/api/services/update', methods=['POST'])
-def update_service():
-    if 'user' not in session:
-        return jsonify({"error": "Non authentifié"}), 401
-        
-    # Seuls PDG, CO-PDG et DRH peuvent modifier les services
-    if session['user']['grade'] not in ['PDG', 'CO-PDG', 'DRH']:
-        return jsonify({"error": "Accès refusé"}), 403
-        
-    data = request.get_json()
-    old_name = data.get('old_name')
-    new_name = data.get('new_name')
-    price = data.get('price')
     
-    if not all([old_name, new_name, price is not None]):
-        return jsonify({"success": False, "message": "Données manquantes"}), 400
-        
-    try:
-        services = load_services()
-        # Trouver et mettre à jour le service
-        for service in services:
-            if service['name'] == old_name:
-                service['name'] = new_name
-                service['price'] = float(price)
-                break
-        
-        save_services(services)
-        return jsonify({"success": True, "message": "Service mis à jour"})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
-@app.route('/api/services/add', methods=['POST', 'OPTIONS'])
-def add_service():
-    """Route pour ajouter un nouveau service"""
+    lottery_settings = load_lottery_settings()
+    return jsonify({
+        "price": lottery_settings.get("ticket_price", 100)
+    })
+
+@app.route('/api/lottery/update', methods=['POST', 'OPTIONS'])
+def update_lottery_price():
+    """Route pour modifier le prix de la loterie"""
     if request.method == 'OPTIONS':
         return '', 200
         
     if 'user' not in session:
         return jsonify({"error": "Non authentifié"}), 401
-        
-    # Seuls PDG, CO-PDG et DRH peuvent ajouter des services
+    
+    # Seuls PDG, CO-PDG et DRH peuvent modifier le prix
     if session['user']['grade'] not in ['PDG', 'CO-PDG', 'DRH']:
         return jsonify({"error": "Accès refusé"}), 403
 
     data = request.get_json()
-    name = data.get('name', '').strip()
-    price = data.get('price')
-
-    # Validation
-    if not name or price is None:
-        return jsonify({"success": False, "message": "Nom et prix requis"}), 400
+    new_price = data.get('price')
+    
+    if new_price is None:
+        return jsonify({"success": False, "message": "Prix requis"}), 400
         
     try:
-        price = float(price)
-        if price < 0:
-            return jsonify({"success": False, "message": "Le prix doit être positif"}), 400
+        new_price = float(new_price)
+        if new_price < 1:
+            return jsonify({"success": False, "message": "Le prix doit être supérieur à 0"}), 400
     except ValueError:
         return jsonify({"success": False, "message": "Prix invalide"}), 400
 
-    services = load_services()
+    lottery_settings = load_lottery_settings()
+    lottery_settings["ticket_price"] = new_price
+    lottery_settings["last_updated"] = datetime.now().isoformat()
+    lottery_settings["updated_by"] = session['user']['username']
     
-    # Vérifier si le service existe déjà
-    if any(service['name'] == name for service in services):
-        return jsonify({"success": False, "message": "Ce service existe déjà"}), 400
-
-    # Ajouter le nouveau service
-    new_service = {
-        "name": name,
-        "price": price,
-        "created_at": datetime.now().isoformat(),
-        "created_by": session['user']['username']
-    }
-    
-    services.append(new_service)
-    save_services(services)
+    save_lottery_settings(lottery_settings)
 
     return jsonify({
         "success": True,
-        "message": "Service ajouté avec succès",
-        "service": new_service
+        "message": f"Prix de la loterie modifié à {new_price}$",
+        "price": new_price
     })
 
-@app.route('/api/services/delete/<name>', methods=['DELETE', 'OPTIONS'])
-def delete_service(name):
-    """Route pour supprimer un service"""
+@app.route('/api/lottery/history', methods=['GET', 'OPTIONS'])
+def get_lottery_history():
+    """Route pour obtenir l'historique des modifications de prix"""
     if request.method == 'OPTIONS':
         return '', 200
         
     if 'user' not in session:
         return jsonify({"error": "Non authentifié"}), 401
-        
+    
     if session['user']['grade'] not in ['PDG', 'CO-PDG', 'DRH']:
         return jsonify({"error": "Accès refusé"}), 403
-
-    services = load_services()
-    initial_count = len(services)
-    services = [s for s in services if s['name'] != name]
     
-    if len(services) == initial_count:
-        return jsonify({"success": False, "message": "Service non trouvé"}), 404
-
-    save_services(services)
-    return jsonify({"success": True, "message": "Service supprimé avec succès"})
+    lottery_settings = load_lottery_settings()
+    
+    # Retourner les infos de dernière modification
+    return jsonify({
+        "current_price": lottery_settings.get("ticket_price", 100),
+        "last_updated": lottery_settings.get("last_updated"),
+        "updated_by": lottery_settings.get("updated_by")
+    })
 
 # ...existing code...
 
@@ -235,6 +200,10 @@ def load_settings():
             settings.setdefault('advert_title', DEFAULT_SETTINGS['advert_title'])
             settings.setdefault('advert_image', DEFAULT_SETTINGS['advert_image'])
             settings.setdefault('advert_text', DEFAULT_SETTINGS['advert_text'])
+            # Sinon, le charger depuis le fichier lottery.json
+            if 'lottery_price' not in settings:
+                lottery = load_lottery_settings()
+                settings['lottery_price'] = lottery.get("ticket_price", 100)
             return settings
     except FileNotFoundError:
         # Try to create file; if not possible, return defaults
@@ -249,6 +218,14 @@ def load_settings():
 
 def save_settings(settings):
     try:
+        # Si le prix de la loterie est dans les settings, le sauvegarder aussi dans lottery.json
+        if 'lottery_price' in settings:
+            lottery = load_lottery_settings()
+            lottery["ticket_price"] = settings['lottery_price']
+            lottery["last_updated"] = datetime.now().isoformat()
+            lottery["updated_by"] = session.get('user', {}).get('username', 'system') if session else 'system'
+            save_lottery_settings(lottery)
+        
         with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
             json.dump(settings, f, indent=2, ensure_ascii=False)
     except PermissionError:
