@@ -2019,7 +2019,9 @@
         // Modifiez checkAuth pour charger les stats
         async function checkAuth() {
             try {
-                const user = await apiCall(`${API_BASE}/current_user`);
+                // Utiliser apiCall comme partout ailleurs !
+                const user = await apiCall('/current_user');
+                
                 if (user && user.username) {
                     currentUser = user;
                     document.getElementById('main-container').style.display = 'flex';
@@ -2035,14 +2037,12 @@
                     await Promise.all([
                         loadGlobalData(),
                         loadUserStats()
-
                     ]);
-                    // Ajouter dans la fonction checkAuth() après updatePermissions(user.grade);
+                    
                     await displayServices();
-
                 }
             } catch (error) {
-                console.log("Utilisateur non connecté");
+                console.log("Utilisateur non connecté", error);
                 window.location.href = '/login';
             }
         }
