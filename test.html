@@ -1318,6 +1318,10 @@
                         transition: all 0.3s ease;
                     `;
                     
+                    // Dans loadVentesList(), ajoutez un badge
+                    if (vente.source === 'webhook') {
+                        html += '<span style="background:#5865F2; color:white; padding:2px 8px; border-radius:12px; font-size:11px;">DISCORD</span>';
+                    }
                     venteItem.innerHTML = `
                         <div style="flex: 1; padding: 10px;">
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
@@ -1350,10 +1354,6 @@
                         Pour voir vos factures externes, ajoutez votre ID personnage dans votre profil.
                     `;
                     container.appendChild(warning);
-                }
-                // Dans loadVentesList(), ajoutez un badge
-                if (vente.source === 'webhook') {
-                    html += '<span style="background:#5865F2; color:white; padding:2px 8px; border-radius:12px; font-size:11px;">DISCORD</span>';
                 }
                 
             } catch (error) {
