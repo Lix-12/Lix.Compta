@@ -372,6 +372,7 @@
                 <a onclick="changepage('accueil')" href="#"><i class="fa fa-home"></i> Accueil</a>
                 <a onclick="changepage('loterie')" href="#"><i class="fa fa-cogs"></i> Loterie</a>
                 <a onclick="changepage('mes-ventes')" href="#"><i class="fa fa-line-chart"></i> Mes ventes</a>
+                <a onclick="changepage('historique-ventes')" href="#"><i class="fa fa-history"></i> Historique complet</a>
             </div>
             <div class="direction-sidebar" id="direction-sidebar">
                 <h6>Direction</h6>
@@ -660,6 +661,68 @@
                 <h3>Dernières ventes</h3>
                 <div id="liste-ventes" style="max-height: 300px; overflow-y: auto;">
                     <div class="loading">Chargement des ventes...</div>
+                </div>
+            </div>
+            <!-- HISTORIQUE COMPLET DES VENTES -->
+            <div id="historique-ventes" class="section-content" style="display: none;">
+                <h2>📜 Historique complet des ventes</h2>
+                
+                <!-- Filtres -->
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; background: #f8f9fa; padding: 15px; border-radius: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa fa-calendar" style="color: #3b82f6;"></i>
+                        <select id="semaine-select" style="padding: 8px 12px; border-radius: 8px; border: 2px solid #e2e8f0; min-width: 200px;">
+                            <option value="">Toutes les semaines</option>
+                        </select>
+                    </div>
+                    
+                    <div style="display: flex; gap: 5px; margin-left: auto;">
+                        <button onclick="changerPage('historique-ventes')" class="btn btn-primary" style="background: #3b82f6;">
+                            <i class="fa fa-refresh"></i> Rafraîchir
+                        </button>
+                        <button onclick="exporterCSV()" class="btn btn-success" style="background: #22c55e;">
+                            <i class="fa fa-download"></i> Exporter CSV
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Statistiques rapides -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; padding: 15px; border-radius: 10px;">
+                        <div style="font-size: 13px; opacity: 0.9;">Total des ventes</div>
+                        <div style="font-size: 24px; font-weight: bold;" id="stats-total-global">0$</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #10b981 0%, #047857 100%); color: white; padding: 15px; border-radius: 10px;">
+                        <div style="font-size: 13px; opacity: 0.9;">Nombre de ventes</div>
+                        <div style="font-size: 24px; font-weight: bold;" id="stats-nb-global">0</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%); color: white; padding: 15px; border-radius: 10px;">
+                        <div style="font-size: 13px; opacity: 0.9;">Moyenne par vente</div>
+                        <div style="font-size: 24px; font-weight: bold;" id="stats-moyenne-global">0$</div>
+                    </div>
+                </div>
+                
+                <!-- Liste des ventes avec pagination -->
+                <div id="historique-liste" style="min-height: 400px;">
+                    <div class="loading">Chargement de l'historique...</div>
+                </div>
+                
+                <!-- Pagination -->
+                <div style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 20px; padding: 15px;">
+                    <button id="page-prev" onclick="changerPageHistorique('prev')" class="btn" style="background: #1e293b; color: white; padding: 10px 20px; border-radius: 8px;" disabled>
+                        <i class="fa fa-chevron-left"></i> Précédent
+                    </button>
+                    
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <span id="page-info" style="font-weight: 500;">Page 1 / 1</span>
+                        <select id="page-select" onchange="allerPage(this.value)" style="padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                            <option value="1">1</option>
+                        </select>
+                    </div>
+                    
+                    <button id="page-next" onclick="changerPageHistorique('next')" class="btn" style="background: #1e293b; color: white; padding: 10px 20px; border-radius: 8px;" disabled>
+                        Suivant <i class="fa fa-chevron-right"></i>
+                    </button>
                 </div>
             </div>
             <!-- AUTRES SECTIONS -->
@@ -1536,6 +1599,10 @@ async function loadVentesList() {
                             if (globalChartData) {
                                 createChart('ventesChart', globalChartData, 'ventes');
                             }
+                            break;
+                        case 'historique-ventes':
+                            loadSemainesDisponibles();
+                            loadHistoriqueVentes(1);
                             break;
                         case 'bilan':
                             if (globalChartData) {
@@ -3429,6 +3496,220 @@ async function testDiscordWebhook() {
     }
 }
 
+// Variables globales pour la pagination
+let historiquePageActuelle = 1;
+let historiqueTotalPages = 1;
+let historiquePerPage = 10;
+let historiqueFiltreSemaine = '';
+
+// Charger l'historique des ventes
+async function loadHistoriqueVentes(page = 1) {
+    const container = document.getElementById('historique-liste');
+    const prevBtn = document.getElementById('page-prev');
+    const nextBtn = document.getElementById('page-next');
+    const pageInfo = document.getElementById('page-info');
+    const pageSelect = document.getElementById('page-select');
+    
+    try {
+        // Construire l'URL avec les paramètres
+        let url = `/api/ventes/historique?page=${page}&per_page=${historiquePerPage}`;
+        if (historiqueFiltreSemaine) {
+            url += `&semaine=${historiqueFiltreSemaine}`;
+        }
+        
+        const data = await apiCall(url);
+        
+        if (!data.ventes || data.ventes.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 60px; color: #64748b;">
+                    <i class="fa fa-inbox" style="font-size: 64px; margin-bottom: 20px;"></i>
+                    <h3>Aucune vente trouvée</h3>
+                    <p>Essayez de changer de filtre ou de semaine</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Mettre à jour la pagination
+        historiquePageActuelle = data.pagination.page;
+        historiqueTotalPages = data.pagination.total_pages;
+        
+        prevBtn.disabled = historiquePageActuelle <= 1;
+        nextBtn.disabled = historiquePageActuelle >= historiqueTotalPages;
+        
+        pageInfo.textContent = `Page ${historiquePageActuelle} / ${historiqueTotalPages}`;
+        
+        // Mettre à jour le select
+        let options = '';
+        for (let i = 1; i <= historiqueTotalPages; i++) {
+            options += `<option value="${i}" ${i === historiquePageActuelle ? 'selected' : ''}>${i}</option>`;
+        }
+        pageSelect.innerHTML = options;
+        
+        // Calculer les stats
+        const total = data.ventes.reduce((sum, v) => sum + (v.total || 0), 0);
+        const moyenne = data.ventes.length > 0 ? (total / data.ventes.length).toFixed(2) : 0;
+        
+        document.getElementById('stats-total-global').textContent = `${total.toLocaleString()}$`;
+        document.getElementById('stats-nb-global').textContent = data.pagination.total;
+        document.getElementById('stats-moyenne-global').textContent = `${moyenne}$`;
+        
+        // Afficher les ventes
+        let html = '';
+        
+        data.ventes.forEach(vente => {
+            const date = new Date(vente.date).toLocaleDateString('fr-FR', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+            
+            const source = vente.source || 'local';
+            let bgColor, borderColor, sourceText;
+            
+            switch(source) {
+                case 'webhook':
+                    bgColor = '#eef2ff';
+                    borderColor = '#5865F2';
+                    sourceText = '<span style="background: #5865F2; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">DISCORD</span>';
+                    break;
+                case 'API':
+                    bgColor = '#f0f9ff';
+                    borderColor = '#3b82f6';
+                    sourceText = '<span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">EXTERNE</span>';
+                    break;
+                default:
+                    bgColor = '#f0fdf4';
+                    borderColor = '#22c55e';
+                    sourceText = '<span style="background: #22c55e; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">LOCAL</span>';
+            }
+            
+            // Extraire le client si disponible
+            let client = 'Client inconnu';
+            if (vente.items && Array.isArray(vente.items)) {
+                const firstItem = vente.items[0];
+                if (firstItem && firstItem.client) {
+                    client = firstItem.client;
+                }
+            }
+            
+            html += `
+                <div style="background: ${bgColor}; border-left: 4px solid ${borderColor}; border-radius: 8px; margin-bottom: 10px; padding: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px; flex-wrap: wrap;">
+                            <strong>Facture #${vente.id}</strong>
+                            ${sourceText}
+                            <span style="color: #64748b; font-size: 13px;">👤 ${client}</span>
+                        </div>
+                        <div style="color: #64748b; font-size: 13px;">
+                            <i class="fa fa-user"></i> ${vente.vendeur || 'Inconnu'} • 
+                            <i class="fa fa-calendar"></i> ${date}
+                        </div>
+                    </div>
+                    <div style="font-weight: bold; color: ${borderColor}; font-size: 20px;">
+                        ${(vente.total || 0).toLocaleString('fr-FR')}$
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Erreur chargement historique:', error);
+        container.innerHTML = `
+            <div style="color: #ef4444; text-align: center; padding: 40px;">
+                <i class="fa fa-exclamation-triangle" style="font-size: 48px;"></i>
+                <h3>Erreur de chargement</h3>
+                <p>${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// Charger les semaines disponibles
+async function loadSemainesDisponibles() {
+    try {
+        const semaines = await apiCall('/api/ventes/semaines');
+        const select = document.getElementById('semaine-select');
+        
+        let options = '<option value="">📅 Toutes les semaines</option>';
+        
+        semaines.forEach(s => {
+            const date = new Date();
+            date.setFullYear(s.annee);
+            date.setMonth(0, 1 + (s.semaine - 1) * 7);
+            
+            const debut = new Date(date);
+            const fin = new Date(date);
+            fin.setDate(fin.getDate() + 6);
+            
+            options += `
+                <option value="${s.id}">
+                    📆 Semaine ${s.semaine} (${debut.toLocaleDateString('fr-FR')} - ${fin.toLocaleDateString('fr-FR')}) • 
+                    ${s.nb_ventes} ventes • ${s.total.toLocaleString('fr-FR')}$
+                </option>
+            `;
+        });
+        
+        select.innerHTML = options;
+        
+        // Ajouter l'événement change
+        select.onchange = function(e) {
+            historiqueFiltreSemaine = e.target.value;
+            historiquePageActuelle = 1;
+            loadHistoriqueVentes(1);
+        };
+        
+    } catch (error) {
+        console.error('Erreur chargement semaines:', error);
+    }
+}
+
+// Navigation pagination
+function changerPageHistorique(direction) {
+    if (direction === 'prev' && historiquePageActuelle > 1) {
+        loadHistoriqueVentes(historiquePageActuelle - 1);
+    } else if (direction === 'next' && historiquePageActuelle < historiqueTotalPages) {
+        loadHistoriqueVentes(historiquePageActuelle + 1);
+    }
+}
+
+function allerPage(page) {
+    loadHistoriqueVentes(parseInt(page));
+}
+
+// Exporter en CSV
+function exporterCSV() {
+    let url = '/api/ventes/historique?page=1&per_page=10000';
+    if (historiqueFiltreSemaine) {
+        url += `&semaine=${historiqueFiltreSemaine}`;
+    }
+    
+    apiCall(url).then(data => {
+        if (!data.ventes || data.ventes.length === 0) {
+            alert('Aucune donnée à exporter');
+            return;
+        }
+        
+        let csv = 'ID,Date,Vendeur,Client,Montant,Source\n';
+        
+        data.ventes.forEach(v => {
+            let client = 'Inconnu';
+            if (v.items && Array.isArray(v.items) && v.items[0] && v.items[0].client) {
+                client = v.items[0].client;
+            }
+            
+            const date = new Date(v.date).toLocaleDateString('fr-FR');
+            csv += `${v.id},${date},${v.vendeur || ''},${client},${v.total},${v.source || 'local'}\n`;
+        });
+        
+        // Télécharger le fichier
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `ventes_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+    });
+}
     </script>
 </body>
 
