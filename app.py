@@ -1192,11 +1192,16 @@ def discord_webhook():
                     'facture_source': 'discord',
                     'message_id': data.get('message_id')
                 }]
-                
+
+                vente_data = {
+                    'source': 'webhook',  # 🔴 AJOUT IMPORTANT
+                    'items': items
+                }
+
                 cursor.execute("""
-                    INSERT INTO ventes (vendeur, date, total, items)
-                    VALUES (%s, NOW(), %s, %s)
-                """, (user['username'], montant, json.dumps(items)))
+                    INSERT INTO ventes (vendeur, date, total, items, source)
+                    VALUES (%s, NOW(), %s, %s, %s)
+                """, (user['username'], montant, json.dumps(vente_data), 'webhook'))
                 
                 conn.commit()
                 ventes_crees += 1
@@ -1225,11 +1230,14 @@ def extract_amount(description):
     return int(match.group(1)) if match else None
 
 def extract_id_from_fields(fields, field_name):
-    import re
     for field in fields:
-        if field.get('name') == field_name:
-            match = re.search(r'\*ID: (\d+)\*', field.get('value', ''))
+        name = field.get('name', '').lower()
+        if field_name.lower() in name:
+            value = field.get('value', '')
+            match = re.search(r'ID[:\s]*(\d+)', value)
             return match.group(1) if match else None
+
+        print(field)
     return None
 
 def extract_name_from_fields(fields, field_name):
