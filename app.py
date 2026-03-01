@@ -697,8 +697,7 @@ def update_settings_route():
     if 'lottery_price' in body:
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("UPDATE lottery SET ticket_price=%s, last_updated=NOW(), updated_by=%s",
-                       (float(body['lottery_price']), session['user']['username']))
+        cursor.execute("UPDATE lottery SET ticket_price=%s, last_updated=NOW(), updated_by=%s", (float(body['lottery_price']), session['user']['username']))
         conn.commit()
         cursor.close()
         conn.close()
@@ -1135,104 +1134,114 @@ def get_charges_stats():
 import re
 from datetime import datetime
 
-@app.route('/api/webhook/discord', methods=['POST'])
+@app.route('/api/webhook/discord', methods=['POST', 'OPTIONS'])
 def discord_webhook():
-    """Reçoit les notifications Discord et crée les ventes automatiquement"""
+    """Reçoit les factures du bot Discord"""
+    
+    # Gérer les requêtes OPTIONS (CORS)
+    if request.method == 'OPTIONS':
+        return '', 200
+    
+    print("🔔 Webhook reçu du bot Discord!")
+    
     try:
         data = request.get_json()
+        print("📦 Données reçues:", json.dumps(data, indent=2)[:500])  # Log limité
         
-        # Vérifier si c'est un embed avec "Facture Payée"
         if not data or 'embeds' not in data:
             return jsonify({"success": False, "message": "Pas d'embed"}), 200
-            
+        
+        ventes_crees = 0
+        
         for embed in data['embeds']:
             title = embed.get('title', '')
             
-            # On ne traite que les factures payées
             if 'Facture Payée' not in title:
                 continue
-                
-            description = embed.get('description', '')
-            fields = embed.get('fields', [])
+            
+            print("💰 Traitement d'une facture...")
             
             # Extraire les informations
-            montant = extract_amount(description)
-            emetteur_id = extract_id_from_fields(fields, 'Émetteur')
-            emetteur_nom = extract_name_from_fields(fields, 'Émetteur')
-            payeur_nom = extract_name_from_fields(fields, 'Payer')
-            article = extract_article(fields)
+            montant = extract_amount(embed.get('description', ''))
+            emetteur_id = extract_id_from_fields(embed.get('fields', []), 'Émetteur')
+            emetteur_nom = extract_name_from_fields(embed.get('fields', []), 'Émetteur')
+            payeur_nom = extract_name_from_fields(embed.get('fields', []), 'Payer')
+            article = extract_article(embed.get('fields', []))
             
             if not emetteur_id or not montant:
-                print("⚠️ Informations manquantes dans l'embed")
+                print("⚠️ Informations manquantes")
                 continue
-                
-            # Vérifier si l'émetteur existe dans notre base
+            
+            print(f"📌 ID Émetteur: {emetteur_id}, Montant: {montant}$")
+            
+            # Vérifier si l'utilisateur existe
             conn = get_db()
             cursor = conn.cursor(dictionary=True)
             cursor.execute("SELECT username FROM users WHERE id_personnage = %s", (emetteur_id,))
             user = cursor.fetchone()
             
             if user:
-                # Créer la vente
-                vendeur = user['username']
-                date_vente = datetime.now()
+                print(f"✅ Utilisateur trouvé: {user['username']}")
                 
-                # Créer l'item de vente
+                # Créer la vente
                 items = [{
                     'name': article or 'job/service',
                     'qty': 1,
                     'price': montant,
-                    'client': payeur_nom or 'Client inconnu'
+                    'client': payeur_nom or 'Client inconnu',
+                    'facture_source': 'discord',
+                    'message_id': data.get('message_id')
                 }]
                 
                 cursor.execute("""
                     INSERT INTO ventes (vendeur, date, total, items)
-                    VALUES (%s, %s, %s, %s)
-                """, (vendeur, date_vente, montant, json.dumps(items)))
+                    VALUES (%s, NOW(), %s, %s)
+                """, (user['username'], montant, json.dumps(items)))
                 
                 conn.commit()
-                print(f"✅ Vente ajoutée pour {vendeur}: {montant}$")
+                ventes_crees += 1
+                print(f"✅ Vente ajoutée pour {user['username']}")
                 
             else:
-                print(f"⚠️ Émetteur ID {emetteur_id} non trouvé dans la BDD")
+                print(f"⚠️ Aucun utilisateur avec ID {emetteur_id}")
             
             cursor.close()
             conn.close()
         
-        return jsonify({"success": True}), 200
+        return jsonify({
+            "success": True,
+            "ventes_crees": ventes_crees,
+            "message": f"{ventes_crees} vente(s) créée(s)"
+        }), 200
         
     except Exception as e:
-        print(f"❌ Erreur webhook: {e}")
+        print(f"❌ Erreur: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
+# Fonctions d'extraction (à mettre dans le même fichier)
 def extract_amount(description):
-    """Extrait le montant de la description"""
+    import re
     match = re.search(r'\*\*\$(\d+)\*\*', description)
     return int(match.group(1)) if match else None
 
 def extract_id_from_fields(fields, field_name):
-    """Extrait l'ID d'un champ spécifique"""
+    import re
     for field in fields:
-        if field['name'] == field_name:
-            # Cherche l'ID dans le format "Nom\n*ID: 123456*"
-            match = re.search(r'\*ID: (\d+)\*', field['value'])
-            return int(match.group(1)) if match else None
+        if field.get('name') == field_name:
+            match = re.search(r'\*ID: (\d+)\*', field.get('value', ''))
+            return match.group(1) if match else None
     return None
 
 def extract_name_from_fields(fields, field_name):
-    """Extrait le nom d'un champ spécifique"""
     for field in fields:
-        if field['name'] == field_name:
-            # Le nom est la première ligne avant le \n
-            return field['value'].split('\n')[0].strip()
+        if field.get('name') == field_name:
+            return field.get('value', '').split('\n')[0].strip()
     return None
 
 def extract_article(fields):
-    """Extrait l'article/services"""
     for field in fields:
-        if field['name'] == 'Articles/Services':
-            # Format: "job_service × 1 - $250"
-            parts = field['value'].split('×')[0].strip()
+        if field.get('name') == 'Articles/Services':
+            parts = field.get('value', '').split('×')[0].strip()
             return parts if parts else 'job/service'
     return 'job/service'
 
