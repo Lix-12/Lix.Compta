@@ -638,7 +638,12 @@
                             <span id="nb-ventes-personnel">0</span>
                         </p>
                     </div>
-
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="margin: 0;">📊 Mes Ventes Personnelles</h2>
+                        <button onclick="refreshExternalInvoices()" class="btn btn-primary" style="background: #3b82f6;">
+                            <i class="fa fa-refresh"></i> Synchroniser
+                        </button>
+                    </div>
                     <div style="background: #fffbeb; padding: 15px; border-radius: 10px; flex: 1;">
                         <h3 style="color: #b45309; margin: 0 0 10px 0;">Moyenne/vente</h3>
                         <p style="font-size: 24px; font-weight: bold; color: #b45309; margin: 0;">
@@ -1176,11 +1181,39 @@
             try {
                 console.log("Chargement des données personnelles...");
                 const data = await apiCall('/my_data');
+
+                const users = await apiCall('/users');
+                const currentUsername = currentUser.username;
+                const characterId = users[currentUsername]?.id_personnage;
+                
+                // Appeler l'API externe si on a un ID personnage
+                let apiInvoices = [];
+                if (characterId) {
+                    apiInvoices = await fetchInvoicesFromAPI(characterId);
+                }
+                
+                // Fusionner les ventes locales et les factures API
+                data.ventes_historique = [
+                    ...(data.ventes_historique || []),
+                    ...apiInvoices.map(invoice => ({
+                        id: `api-${invoice.id || Date.now()}`,
+                        date: invoice.date || new Date().toISOString(),
+                        total: invoice.amount || invoice.total || 0,
+                        items: invoice.items || [],
+                        source: 'API',
+                        invoice_number: invoice.invoice_number || 'N/A',
+                        client: invoice.client_name || 'Client externe'
+                    }))
+                ];
+                
+                // Recalculer les totaux
+                data.total_ca = data.ventes_historique.reduce((sum, v) => sum + (v.total || 0), 0);
+                data.nb_ventes = data.ventes_historique.length;
+
                 personalChartData = data;
 
                 console.log("Données personnelles reçues:", data);
 
-                // FORCER la mise à jour des statistiques
                 updatePersonalStats();
 
                 // Si on est sur la page mes-ventes, mettre à jour le graphique
@@ -1195,73 +1228,161 @@
             }
         }
         // Fonction pour afficher la liste des ventes
-        // Fonction pour afficher la liste des ventes
         async function loadVentesList() {
             try {
-                const allData = await apiCall('/my_data'); // Charger seulement les données perso
-
-                console.log("Données complètes reçues:", allData);
-
-                // Récupérer la liste des ventes personnelles fournie par l'API
-                const userVentes = (allData.ventes_historique || []).filter(Boolean);
-
+                const allData = await apiCall('/my_data');
+                
+                // Récupérer l'ID personnage
+                const users = await apiCall('/users');
+                const characterId = users[currentUser.username]?.id_personnage;
+                
+                // Fusionner avec l'API
+                let allVentes = [...(allData.ventes_historique || [])];
+                
+                if (characterId) {
+                    const apiInvoices = await fetchInvoicesFromAPI(characterId);
+                    allVentes = [
+                        ...allVentes,
+                        ...apiInvoices.map(invoice => ({
+                            id: `api-${invoice.id}`,
+                            date: invoice.created_at || new Date().toISOString(),
+                            total: invoice.total_amount || invoice.amount || 0,
+                            client: invoice.client_name || 'Client externe',
+                            source: 'API',
+                            status: invoice.status || 'payé'
+                        }))
+                    ];
+                }
+                
                 const container = document.getElementById('liste-ventes');
-
-                if (userVentes.length === 0) {
+                
+                if (allVentes.length === 0) {
                     container.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: #64748b;">
-                    <i class="fa fa-inbox" style="font-size: 48px; margin-bottom: 15px;"></i>
-                    <p>Aucune vente enregistrée</p>
-                </div>
-            `;
+                        <div style="text-align: center; padding: 40px; color: #64748b;">
+                            <i class="fa fa-inbox" style="font-size: 48px; margin-bottom: 15px;"></i>
+                            <p>Aucune vente enregistrée</p>
+                            ${!characterId ? 
+                                '<small style="color: #f59e0b;">⚠️ Ajoutez votre ID personnage dans votre profil pour voir vos factures externes</small>' : 
+                                ''}
+                        </div>
+                    `;
                     return;
                 }
-
-                // Trier par date (plus récent en premier)
-                userVentes.sort((a, b) => {
-                    const dateA = new Date(a.date || 0);
-                    const dateB = new Date(b.date || 0);
-                    return dateB - dateA;
-                });
-
+                
+                allVentes.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
                 container.innerHTML = '';
-
-                userVentes.forEach(vente => {
-                    const date = new Date(vente.date || Date.now()).toLocaleDateString('fr-FR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
+                
+                allVentes.forEach(vente => {
+                    const date = new Date(vente.date).toLocaleDateString('fr-FR', {
+                        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
                     });
-
+                    
+                    const isFromAPI = vente.source === 'API';
+                    const bgColor = isFromAPI ? '#f0f9ff' : 'white';
+                    const borderColor = isFromAPI ? '#3b82f6' : '#22c55e';
+                    
                     const venteItem = document.createElement('div');
                     venteItem.className = 'user-item';
-                    venteItem.style.marginBottom = '10px';
-
+                    venteItem.style.cssText = `
+                        margin-bottom: 10px;
+                        background: ${bgColor};
+                        border-left: 4px solid ${borderColor};
+                        transition: all 0.3s ease;
+                    `;
+                    
                     venteItem.innerHTML = `
-                <div style="flex: 1;">
-                    <strong>Vente #${vente.id || 'N/A'}</strong><br>
-                    <small>${date}</small><br>
-                    <small>${vente.items ? vente.items.length : 0} article(s)</small>
-                </div>
-                <div style="font-weight: bold; color: #22c55e;">
-                    ${vente.total || 0}$
-                </div>
-            `;
-
+                        <div style="flex: 1; padding: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                                <strong>Facture #${vente.id || 'N/A'}</strong>
+                                ${isFromAPI ? 
+                                    '<span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">EXTERNE</span>' : 
+                                    '<span style="background: #22c55e; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">LOCAL</span>'
+                                }
+                                ${vente.client ? `<span style="color: #64748b; font-size: 13px;">👤 ${vente.client}</span>` : ''}
+                            </div>
+                            <div style="color: #64748b; font-size: 13px;">
+                                <i class="fa fa-calendar"></i> ${date}
+                            </div>
+                            ${vente.status ? `<div style="font-size: 12px; color: ${vente.status === 'payé' ? '#22c55e' : '#f59e0b'};">Statut: ${vente.status}</div>` : ''}
+                        </div>
+                        <div style="font-weight: bold; color: ${isFromAPI ? '#3b82f6' : '#22c55e'}; padding: 10px; font-size: 18px;">
+                            ${(vente.total || 0).toLocaleString('fr-FR')}$
+                        </div>
+                    `;
+                    
                     container.appendChild(venteItem);
                 });
-
+                
+                // Ajouter un indicateur si l'API n'a pas pu être appelée
+                if (!characterId) {
+                    const warning = document.createElement('div');
+                    warning.style.cssText = 'margin-top: 15px; padding: 10px; background: #fffbeb; border-radius: 8px; color: #f59e0b; text-align: center; font-size: 13px;';
+                    warning.innerHTML = `
+                        <i class="fa fa-info-circle"></i> 
+                        Pour voir vos factures externes, ajoutez votre ID personnage dans votre profil.
+                    `;
+                    container.appendChild(warning);
+                }
+                
             } catch (error) {
-                console.error("Erreur lors du chargement de la liste des ventes:", error);
+                console.error("Erreur chargement ventes:", error);
                 document.getElementById('liste-ventes').innerHTML = `
-            <div style="color: #ef4444; text-align: center; padding: 20px;">
-                Erreur lors du chargement des ventes: ${error.message}
-            </div>
-        `;
+                    <div style="color: #ef4444; text-align: center; padding: 20px;">
+                        <i class="fa fa-exclamation-triangle"></i><br>
+                        Erreur: ${error.message}
+                    </div>
+                `;
             }
         }
+
+        async function fetchInvoicesFromAPI(characterId) {
+            if (!characterId) return [];
+            
+            try {
+                const url = `https://apirp.glife.fr/roleplay/company/invoices?id=342&characterId=${characterId}`;
+                console.log(`🔍 Appel API externe: ${url}`);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        // Si l'API nécessite une clé, décommentez la ligne suivante :
+                        // 'Authorization': 'Bearer VOTRE_CLE_API'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Erreur API: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log(`✅ ${data.length} factures trouvées pour l'ID ${characterId}`);
+                return data;
+                
+            } catch (error) {
+                console.error('❌ Erreur appel API externe:', error);
+                return [];
+            }
+        }
+
+        async function refreshExternalInvoices() {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Synchronisation...';
+            btn.disabled = true;
+            
+            try {
+                await loadMyData();
+                alert('✅ Factures synchronisées avec succès !');
+            } catch (error) {
+                alert('❌ Erreur de synchronisation');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
         function createChart(canvasId, data, section) {
             if (!canvasId) {
                 console.error('Canvas ID non fourni');
