@@ -134,7 +134,28 @@ def init_db():
             updated_by VARCHAR(100)
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS partenaires (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            nom VARCHAR(255) NOT NULL UNIQUE,
+            date_creation DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_by VARCHAR(100)
+        )
+    """)
 
+    # Table des charges
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS charges (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            partenaire_id INT NOT NULL,
+            montant DECIMAL(10,2) NOT NULL,
+            raison ENUM('marchandises', 'menu partenaire', 'station essence', 'loyer', 'CCI') NOT NULL,
+            date_charge DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_by VARCHAR(100),
+            notes TEXT,
+            FOREIGN KEY (partenaire_id) REFERENCES partenaires(id) ON DELETE CASCADE
+        )
+    """)
     # Données par défaut grades
     default_grades = [
         ('Apprenti', 2, 1500),
@@ -180,6 +201,17 @@ def init_db():
     cursor.execute("SELECT COUNT(*) FROM lottery")
     if cursor.fetchone()[0] == 0:
         cursor.execute("INSERT INTO lottery (ticket_price, last_updated, updated_by) VALUES (100, NOW(), 'system')")
+
+    default_partenaires = [
+    ('Fournisseur A', 'system'),
+    ('Fournisseur B', 'system'),
+    ('Restaurant X', 'system'),
+    ('Station Total', 'system'),
+    ]
+    for p in default_partenaires:
+        cursor.execute("""
+            INSERT IGNORE INTO partenaires (nom, created_by) VALUES (%s, %s)
+        """, p)
 
     conn.commit()
     cursor.close()
@@ -908,7 +940,177 @@ def adverts_logs():
             r['date'] = r['date'].isoformat()
     return jsonify(rows)
 
-# LOTERIE
+@app.route('/api/partenaires', methods=['GET', 'OPTIONS'])
+@login_required
+def get_partenaires():
+    """Récupère la liste des partenaires"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM partenaires ORDER BY nom")
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    
+    return jsonify(rows)
+
+@app.route('/api/partenaires/add', methods=['POST', 'OPTIONS'])
+@login_required
+def add_partenaire():
+    """Ajoute un nouveau partenaire"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
+    # Vérifier les permissions (direction uniquement)
+    if session['user']['grade'] not in ['PDG', 'CO-PDG', 'DRH']:
+        return jsonify({"success": False, "message": "Accès refusé"}), 403
+    
+    data = request.get_json()
+    nom = data.get('nom', '').strip()
+    
+    if not nom:
+        return jsonify({"success": False, "message": "Le nom est requis"})
+    
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO partenaires (nom, created_by) VALUES (%s, %s)",
+            (nom, session['user']['username'])
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({"success": True, "message": f"Partenaire '{nom}' ajouté"})
+    
+    except Exception as e:
+        if "Duplicate entry" in str(e):
+            return jsonify({"success": False, "message": "Ce partenaire existe déjà"})
+        return jsonify({"success": False, "message": str(e)}), 500
+
+# ============================================
+# ROUTES CHARGES
+# ============================================
+
+@app.route('/api/charges', methods=['GET', 'OPTIONS'])
+@login_required
+def get_charges():
+    """Récupère la liste des charges"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
+    # Vérifier les permissions (direction uniquement)
+    if session['user']['grade'] not in ['PDG', 'CO-PDG', 'DRH']:
+        return jsonify({"error": "Accès refusé"}), 403
+    
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT c.*, p.nom as partenaire_nom 
+        FROM charges c
+        JOIN partenaires p ON c.partenaire_id = p.id
+        ORDER BY c.date_charge DESC
+    """)
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    
+    # Convertir les dates en string pour JSON
+    for row in rows:
+        if isinstance(row.get('date_charge'), datetime):
+            row['date_charge'] = row['date_charge'].isoformat()
+    
+    return jsonify(rows)
+
+@app.route('/api/charges/add', methods=['POST', 'OPTIONS'])
+@login_required
+def add_charge():
+    """Ajoute une nouvelle charge"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
+    # Vérifier les permissions (direction uniquement)
+    if session['user']['grade'] not in ['PDG', 'CO-PDG', 'DRH']:
+        return jsonify({"success": False, "message": "Accès refusé"}), 403
+    
+    data = request.get_json()
+    
+    # Validation
+    partenaire_id = data.get('partenaire_id')
+    montant = data.get('montant')
+    raison = data.get('raison')
+    notes = data.get('notes', '')
+    
+    if not partenaire_id:
+        return jsonify({"success": False, "message": "Partenaire requis"})
+    
+    if not montant or montant <= 0:
+        return jsonify({"success": False, "message": "Montant invalide"})
+    
+    raisons_valides = ['marchandises', 'menu partenaire', 'station essence', 'loyer', 'CCI']
+    if raison not in raisons_valides:
+        return jsonify({"success": False, "message": "Raison invalide"})
+    
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO charges (partenaire_id, montant, raison, notes, created_by)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (partenaire_id, float(montant), raison, notes, session['user']['username']))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({"success": True, "message": "Charge enregistrée"})
+    
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+@app.route('/api/charges/stats', methods=['GET', 'OPTIONS'])
+@login_required
+def get_charges_stats():
+    """Récupère les statistiques des charges"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
+    if session['user']['grade'] not in ['PDG', 'CO-PDG', 'DRH']:
+        return jsonify({"error": "Accès refusé"}), 403
+    
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    
+    # Total par raison
+    cursor.execute("""
+        SELECT raison, SUM(montant) as total
+        FROM charges
+        WHERE date_charge >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        GROUP BY raison
+    """)
+    par_raison = cursor.fetchall()
+    
+    # Total par partenaire
+    cursor.execute("""
+        SELECT p.nom, SUM(c.montant) as total
+        FROM charges c
+        JOIN partenaires p ON c.partenaire_id = p.id
+        WHERE c.date_charge >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        GROUP BY p.nom
+        ORDER BY total DESC
+        LIMIT 5
+    """)
+    par_partenaire = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return jsonify({
+        "par_raison": par_raison,
+        "par_partenaire": par_partenaire
+    })
 
 # ─────────────────────────────────────────────
 # DÉMARRAGE
