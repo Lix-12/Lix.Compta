@@ -282,9 +282,27 @@ def calculate_derived_data(ventes, filter_user=None):
         if date_str in week_dates:
             ventes_par_jour[date_str] += montant
         ventes_recentes.append(montant)
-        items = vente['items'] if isinstance(vente['items'], list) else json.loads(vente['items'])
+        
+        # 🔴 CORRECTION ICI : Vérifier le type de 'items'
+        items_data = vente['items']
+        
+        # Si c'est une string, la parser en JSON
+        if isinstance(items_data, str):
+            try:
+                items = json.loads(items_data)
+            except:
+                items = []
+        else:
+            items = items_data
+            
+        # Maintenant items est une liste, on peut itérer
         for item in items:
-            services_count[item.get('name', '')] += item.get('qty', 0)
+            # 🔴 CORRECTION ICI : item peut être un dictionnaire OU une string
+            if isinstance(item, dict):
+                services_count[item.get('name', 'inconnu')] += item.get('qty', 1)
+            else:
+                # Si c'est une string, on compte 1
+                services_count[str(item)] += 1
 
     accueil_data = [ventes_par_jour.get(day, 0) for day in week_dates]
     ventes_data = list(services_count.values())[:7] if services_count else [0] * 7
