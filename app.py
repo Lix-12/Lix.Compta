@@ -469,15 +469,30 @@ def receive_cart():
 # ─────────────────────────────────────────────
 # USERS
 # ─────────────────────────────────────────────
-@app.route('/api/users', methods=['GET', 'OPTIONS'])
-def get_users_route():
-    if request.method == 'OPTIONS':
-        return '', 200
-    if 'user' not in session:
-        return jsonify({"error": "Non authentifié"}), 401
+@app.route('/api/users', methods=['GET'])
+@login_required
+def get_users():
     if session['user']['grade'] not in ['PDG', 'CO-PDG', 'DRH']:
         return jsonify({"error": "Accès refusé"}), 403
-    return jsonify(get_users())
+    
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT username, grade, nom, prenom, id_personnage FROM users")
+    users = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    
+    # Formater pour l'utilisation côté client
+    result = {}
+    for user in users:
+        result[user['username']] = {
+            'grade': user['grade'],
+            'nom': user['nom'],
+            'prenom': user['prenom'],
+            'id_personnage': user['id_personnage']
+        }
+    
+    return jsonify(result)
 
 @app.route('/api/users/add', methods=['POST', 'OPTIONS'])
 def add_user_route():
