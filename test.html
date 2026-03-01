@@ -307,6 +307,37 @@
             transform: scale(1.05);
             box-shadow: 0 2px 8px rgba(59,130,246,0.3);
         }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #4b5563;
+        }
+
     </style>
 </head>
 
@@ -643,8 +674,109 @@
                 <canvas id="salairesChart"></canvas>
             </div>
 
-            <div id="charges" class="chart-container">
-                <canvas id="chargesChart"></canvas>
+            <div id="charges" class="section-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0;">💰 Gestion des Charges</h2>
+                    <button onclick="openChargeModal()" class="btn btn-primary" style="background: #ef4444; color: white; padding: 12px 24px;">
+                        <i class="fa fa-plus"></i> Ajouter une charge
+                    </button>
+                </div>
+
+                <!-- Liste des charges -->
+                <div id="charges-list" style="margin-top: 20px;">
+                    <div class="loading">Chargement des charges...</div>
+                </div>
+
+                <!-- Graphique des charges par catégorie -->
+                <div style="margin-top: 30px; height: 300px;">
+                    <canvas id="chargesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- MODAL AJOUTER PARTENAIRE -->
+            <div id="partenaire-modal" class="modal" style="display: none;">
+                <div class="modal-content" style="max-width: 400px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="margin: 0;">➕ Nouveau Partenaire</h3>
+                        <button onclick="closePartenaireModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+                    </div>
+                    <div class="form-group">
+                        <label for="partenaire-nom">Nom du partenaire *</label>
+                        <input type="text" id="partenaire-nom" placeholder="Ex: Fournisseur ABC" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                        <button onclick="closePartenaireModal()" class="btn" style="background: #6b7280; color: white;">Annuler</button>
+                        <button onclick="savePartenaire()" class="btn btn-success" style="background: #22c55e; color: white;">
+                            <i class="fa fa-save"></i> Enregistrer
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL AJOUTER CHARGE -->
+            <div id="charge-modal" class="modal" style="display: none;">
+                <div class="modal-content" style="max-width: 500px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="margin: 0;">➕ Nouvelle Charge</h3>
+                        <button onclick="closeChargeModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+                    </div>
+                    
+                    <div id="charge-loading" style="display: none; text-align: center; padding: 20px;">
+                        <i class="fa fa-spinner fa-spin"></i> Chargement...
+                    </div>
+                    
+                    <div id="charge-form">
+                        <!-- Sélection du partenaire -->
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500;">Partenaire *</label>
+                            <div style="display: flex; gap: 10px;">
+                                <select id="charge-partenaire" style="flex: 1; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                                    <option value="">Sélectionnez un partenaire...</option>
+                                </select>
+                                <button onclick="openPartenaireModal()" class="btn btn-primary" style="white-space: nowrap;" title="Ajouter un nouveau partenaire">
+                                    <i class="fa fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Montant -->
+                        <div class="form-group">
+                            <label for="charge-montant" style="display: block; margin-bottom: 8px; font-weight: 500;">Montant *</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="number" id="charge-montant" min="0" step="0.01" placeholder="0.00" 
+                                    style="flex: 1; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                                <span style="font-weight: bold;">$</span>
+                            </div>
+                        </div>
+
+                        <!-- Raison -->
+                        <div class="form-group">
+                            <label for="charge-raison" style="display: block; margin-bottom: 8px; font-weight: 500;">Raison *</label>
+                            <select id="charge-raison" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                                <option value="">Sélectionnez une raison...</option>
+                                <option value="marchandises">📦 Marchandises</option>
+                                <option value="menu partenaire">🍽️ Menu partenaire</option>
+                                <option value="station essence">⛽ Station essence</option>
+                                <option value="loyer">🏢 Loyer</option>
+                                <option value="CCI">📋 CCI</option>
+                            </select>
+                        </div>
+
+                        <!-- Notes (optionnel) -->
+                        <div class="form-group">
+                            <label for="charge-notes" style="display: block; margin-bottom: 8px; font-weight: 500;">Notes (optionnel)</label>
+                            <textarea id="charge-notes" rows="3" placeholder="Informations complémentaires..." 
+                                style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;"></textarea>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+                            <button onclick="closeChargeModal()" class="btn" style="background: #6b7280; color: white;">Annuler</button>
+                            <button onclick="saveCharge()" class="btn btn-success" style="background: #22c55e; color: white;">
+                                <i class="fa fa-check"></i> Enregistrer la charge
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- PARAMETRES DES GRADES -->
@@ -1268,9 +1400,7 @@
                             break;
 
                         case 'charges':
-                            if (globalChartData) {
-                                createChart('chargesChart', globalChartData, 'charges');
-                            }
+                            loadCharges();
                             break;
 
                         case 'users':
@@ -2858,6 +2988,244 @@ function genererRecu(achatData) {
     console.log(recu);
     
     alert(recu);
+}
+
+function openPartenaireModal() {
+    document.getElementById('partenaire-modal').style.display = 'flex';
+    document.getElementById('partenaire-nom').focus();
+}
+
+// Fermer la modal partenaire
+function closePartenaireModal() {
+    document.getElementById('partenaire-modal').style.display = 'none';
+    document.getElementById('partenaire-nom').value = '';
+}
+
+// Sauvegarder un nouveau partenaire
+async function savePartenaire() {
+    const nom = document.getElementById('partenaire-nom').value.trim();
+    
+    if (!nom) {
+        alert('Veuillez entrer un nom pour le partenaire');
+        return;
+    }
+    
+    try {
+        const result = await apiCall('/partenaires/add', {
+            method: 'POST',
+            body: { nom }
+        });
+        
+        if (result.success) {
+            alert('✅ Partenaire ajouté avec succès !');
+            closePartenaireModal();
+            
+            // Recharger la liste des partenaires dans le select
+            await loadPartenairesSelect();
+            
+            // Si la modal charge est ouverte, sélectionner le nouveau partenaire
+            if (document.getElementById('charge-modal').style.display === 'flex') {
+                const select = document.getElementById('charge-partenaire');
+                // Chercher et sélectionner la nouvelle option
+                for (let option of select.options) {
+                    if (option.text === nom) {
+                        option.selected = true;
+                        break;
+                    }
+                }
+            }
+        } else {
+            alert('❌ Erreur : ' + result.message);
+        }
+    } catch (error) {
+        console.error('Erreur ajout partenaire:', error);
+        alert('❌ Erreur : ' + error.message);
+    }
+}
+
+// Charger la liste des partenaires dans le select
+async function loadPartenairesSelect() {
+    try {
+        const partenaires = await apiCall('/partenaires');
+        const select = document.getElementById('charge-partenaire');
+        
+        select.innerHTML = '<option value="">Sélectionnez un partenaire...</option>';
+        
+        partenaires.forEach(p => {
+            const option = document.createElement('option');
+            option.value = p.id;
+            option.textContent = p.nom;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Erreur chargement partenaires:', error);
+    }
+}
+
+// ============================================
+// GESTION DES CHARGES
+// ============================================
+
+// Ouvrir la modal d'ajout de charge
+async function openChargeModal() {
+    const modal = document.getElementById('charge-modal');
+    const form = document.getElementById('charge-form');
+    const loading = document.getElementById('charge-loading');
+    
+    modal.style.display = 'flex';
+    form.style.display = 'none';
+    loading.style.display = 'block';
+    
+    try {
+        await loadPartenairesSelect();
+        form.style.display = 'block';
+        loading.style.display = 'none';
+        
+        // Réinitialiser le formulaire
+        document.getElementById('charge-partenaire').value = '';
+        document.getElementById('charge-montant').value = '';
+        document.getElementById('charge-raison').value = '';
+        document.getElementById('charge-notes').value = '';
+    } catch (error) {
+        console.error('Erreur:', error);
+        loading.innerHTML = '❌ Erreur de chargement';
+    }
+}
+
+// Fermer la modal charge
+function closeChargeModal() {
+    document.getElementById('charge-modal').style.display = 'none';
+}
+
+// Sauvegarder une nouvelle charge
+async function saveCharge() {
+    const partenaireId = document.getElementById('charge-partenaire').value;
+    const montant = parseFloat(document.getElementById('charge-montant').value);
+    const raison = document.getElementById('charge-raison').value;
+    const notes = document.getElementById('charge-notes').value.trim();
+    
+    // Validation
+    if (!partenaireId) {
+        alert('Veuillez sélectionner un partenaire');
+        return;
+    }
+    
+    if (isNaN(montant) || montant <= 0) {
+        alert('Veuillez entrer un montant valide');
+        return;
+    }
+    
+    if (!raison) {
+        alert('Veuillez sélectionner une raison');
+        return;
+    }
+    
+    try {
+        const result = await apiCall('/charges/add', {
+            method: 'POST',
+            body: {
+                partenaire_id: partenaireId,
+                montant: montant,
+                raison: raison,
+                notes: notes
+            }
+        });
+        
+        if (result.success) {
+            alert('✅ Charge enregistrée avec succès !');
+            closeChargeModal();
+            
+            // Recharger la liste des charges
+            await loadCharges();
+            
+            // Mettre à jour le graphique
+            if (document.getElementById('charges').style.display === 'block') {
+                updateCharts();
+            }
+        } else {
+            alert('❌ Erreur : ' + result.message);
+        }
+    } catch (error) {
+        console.error('Erreur ajout charge:', error);
+        alert('❌ Erreur : ' + error.message);
+    }
+}
+
+// Charger la liste des charges
+async function loadCharges() {
+    const container = document.getElementById('charges-list');
+    
+    try {
+        const [charges, partenaires] = await Promise.all([
+            apiCall('/charges'),
+            apiCall('/partenaires')
+        ]);
+        
+        // Créer un dictionnaire des partenaires pour un accès rapide
+        const partenairesDict = {};
+        partenaires.forEach(p => partenairesDict[p.id] = p.nom);
+        
+        if (charges.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #64748b;">
+                    <i class="fa fa-receipt" style="font-size: 48px; margin-bottom: 15px;"></i>
+                    <p>Aucune charge enregistrée</p>
+                    <button onclick="openChargeModal()" class="btn btn-primary" style="background: #ef4444; color: white;">
+                        <i class="fa fa-plus"></i> Ajouter une charge
+                    </button>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '<div style="display: grid; gap: 10px;">';
+        
+        charges.forEach(charge => {
+            const date = new Date(charge.date_charge).toLocaleDateString('fr-FR', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+            
+            const raisonIcons = {
+                'marchandises': '📦',
+                'menu partenaire': '🍽️',
+                'station essence': '⛽',
+                'loyer': '🏢',
+                'CCI': '📋'
+            };
+            
+            html += `
+                <div style="background: white; border-radius: 10px; padding: 15px; border-left: 4px solid #ef4444; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                                <strong style="font-size: 16px;">${partenairesDict[charge.partenaire_id] || 'Inconnu'}</strong>
+                                <span style="background: #fee2e2; color: #ef4444; padding: 2px 8px; border-radius: 12px; font-size: 12px;">
+                                    ${raisonIcons[charge.raison]} ${charge.raison}
+                                </span>
+                            </div>
+                            <div style="color: #64748b; font-size: 13px;">
+                                <i class="fa fa-calendar"></i> ${date}<br>
+                                ${charge.notes ? `<i class="fa fa-comment"></i> ${charge.notes}` : ''}
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 24px; font-weight: bold; color: #ef4444;">
+                                ${charge.montant.toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}$
+                            </div>
+                            <small style="color: #64748b;">par ${charge.created_by || 'N/A'}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Erreur chargement charges:', error);
+        container.innerHTML = `<div style="color: #ef4444; text-align: center;">❌ Erreur: ${error.message}</div>`;
+    }
 }
     </script>
 </body>
