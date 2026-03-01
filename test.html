@@ -822,7 +822,34 @@
                     </div>
                     <small id="settings-status" style="display:block; margin-top:8px; color:#64748b;"></small>
                 </div>
-
+                <div style="background:#f8f9fa; border-radius:12px; padding:16px; border:1px solid #e5e7eb; margin-bottom:20px;">
+                    <h3 style="margin:0 0 15px 0;">
+                        <i class="fa fa-discord" style="color:#5865F2; margin-right:8px;"></i>
+                        Intégration Discord
+                    </h3>
+                    
+                    <div style="margin-bottom:15px;">
+                        <label style="display:block; margin-bottom:5px; font-weight:500;">URL du Webhook Discord</label>
+                        <div style="display:flex; gap:10px;">
+                            <input type="url" id="discord-webhook-url" 
+                                placeholder="https://discord.com/api/webhooks/..." 
+                                style="flex:1; padding:10px; border:2px solid #e2e8f0; border-radius:8px;">
+                            <button onclick="testDiscordWebhook()" class="btn" style="background:#5865F2; color:white;">
+                                <i class="fa fa-paper-plane"></i> Tester
+                            </button>
+                        </div>
+                        <small style="color:#64748b;">
+                            Les notifications de factures seront automatiquement ajoutées aux ventes
+                        </small>
+                    </div>
+                    
+                    <div style="background:#e8f0fe; border-radius:8px; padding:12px;">
+                        <strong style="color:#1e293b;">📋 URL à configurer dans Discord :</strong><br>
+                        <code style="background:white; padding:4px 8px; border-radius:4px; display:inline-block; margin-top:5px;">
+                            https://votre-site.com/api/webhook/discord
+                        </code>
+                    </div>
+                </div>
                 <!-- Gestion de la loterie -->
                 <div
                     style="background:#f8f9fa; border-radius:12px; padding:16px; border:1px solid #e5e7eb; margin-bottom:20px;">
@@ -1323,6 +1350,10 @@
                         Pour voir vos factures externes, ajoutez votre ID personnage dans votre profil.
                     `;
                     container.appendChild(warning);
+                }
+                // Dans loadVentesList(), ajoutez un badge
+                if (vente.source === 'webhook') {
+                    html += '<span style="background:#5865F2; color:white; padding:2px 8px; border-radius:12px; font-size:11px;">DISCORD</span>';
                 }
                 
             } catch (error) {
@@ -3343,6 +3374,57 @@ async function loadCharges() {
         container.innerHTML = `<div style="color: #ef4444; text-align: center;">❌ Erreur: ${error.message}</div>`;
     }
 }
+// Sauvegarder l'URL du webhook Discord
+async function saveDiscordWebhook() {
+    const url = document.getElementById('discord-webhook-url').value.trim();
+    
+    try {
+        const result = await apiCall('/settings/update', {
+            method: 'POST',
+            body: { discord_webhook: url }
+        });
+        
+        if (result.success) {
+            alert('✅ Webhook Discord configuré');
+        }
+    } catch (error) {
+        alert('❌ Erreur: ' + error.message);
+    }
+}
+
+// Tester le webhook
+async function testDiscordWebhook() {
+    const url = document.getElementById('discord-webhook-url').value.trim();
+    
+    if (!url) {
+        alert('Veuillez entrer une URL');
+        return;
+    }
+    
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                content: '🔔 Test de connexion - Lix Comptabilité',
+                embeds: [{
+                    title: 'Test réussi !',
+                    description: 'Le webhook est correctement configuré.',
+                    color: 0x22c55e
+                }]
+            })
+        });
+        
+        if (response.ok) {
+            alert('✅ Webhook fonctionne !');
+        } else {
+            alert('❌ Erreur: ' + response.status);
+        }
+    } catch (error) {
+        alert('❌ Erreur: ' + error.message);
+    }
+}
+
     </script>
 </body>
 
