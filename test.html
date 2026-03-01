@@ -1306,8 +1306,9 @@
                     });
                     
                     const isFromAPI = vente.source === 'API';
-                    const bgColor = isFromAPI ? '#f0f9ff' : 'white';
-                    const borderColor = isFromAPI ? '#3b82f6' : '#22c55e';
+                    const isFromWebhook = vente.source === 'webhook';
+                    const bgColor = isFromAPI ? '#f0f9ff' : isFromWebhook ? '#eef2ff' : 'white';
+                    const borderColor = isFromAPI ? '#3b82f6' : isFromWebhook ? '#5865F2' : '#22c55e';
                     
                     const venteItem = document.createElement('div');
                     venteItem.className = 'user-item';
@@ -1318,7 +1319,6 @@
                         transition: all 0.3s ease;
                     `;
                     
-                    // Dans loadVentesList(), ajoutez un badge
                     if (vente.source === 'webhook') {
                         html += '<span style="background:#5865F2; color:white; padding:2px 8px; border-radius:12px; font-size:11px;">DISCORD</span>';
                     }
