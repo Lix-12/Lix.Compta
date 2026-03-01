@@ -76,7 +76,8 @@ def init_db():
             password VARCHAR(255) NOT NULL,
             grade VARCHAR(50) NOT NULL DEFAULT 'Apprenti',
             nom VARCHAR(100),
-            prenom VARCHAR(100)
+            prenom VARCHAR(100),
+            id_personnage VARCHAR(50)
         )
     """)
 
@@ -161,8 +162,8 @@ def init_db():
     ]
     for u in default_users:
         cursor.execute("""
-            INSERT IGNORE INTO users (username, password, grade, nom, prenom)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT IGNORE INTO users (username, password, grade, nom, prenom, id_personnage)
+            VALUES (%s, %s, %s, %s, %s, %s)
         """, u)
 
     # Settings par défaut
@@ -459,8 +460,9 @@ def add_user_route():
     password = data.get('password')
     nom = data.get('nom')
     prenom = data.get('prenom')
+    id = data.get('id')
     grade = data.get('grade')
-    if not all([username, password, nom, prenom, grade]):
+    if not all([username, password, nom, prenom, id, grade]):
         return jsonify({"success": False, "message": "Tous les champs sont requis"})
     grades_valides = ['Apprenti', 'CDD', 'CDI', "Chef d'équipe", 'DRH', 'CO-PDG', 'PDG']
     if grade not in grades_valides:
@@ -468,8 +470,8 @@ def add_user_route():
     try:
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO users (username, password, grade, nom, prenom) VALUES (%s,%s,%s,%s,%s)",
-                       (username, password, grade, nom, prenom))
+        cursor.execute("INSERT INTO users (username, password, grade, nom, prenom, id_personnage) VALUES (%s,%s,%s,%s,%s,%s)",
+                       (username, password, grade, nom, prenom, id))
         conn.commit()
         cursor.close()
         conn.close()
@@ -494,7 +496,7 @@ def update_user():
     cursor = conn.cursor()
     fields = []
     values = []
-    for key in ['nom', 'prenom', 'grade', 'password']:
+    for key in ['nom', 'prenom', 'grade', 'password', 'id_personnage']:
         if key in updates:
             fields.append(f"{key}=%s")
             values.append(updates[key])
