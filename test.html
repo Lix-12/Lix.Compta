@@ -1254,118 +1254,122 @@
                 console.error("Erreur lors du chargement des données personnelles:", error);
             }
         }
-        // Fonction pour afficher la liste des ventes
-        async function loadVentesList() {
-            try {
-                const allData = await apiCall('/my_data');
-                
-                // Récupérer l'ID personnage
-                const users = await apiCall('/users');
-                const characterId = users[currentUser.username]?.id_personnage;
-                
-                // Fusionner avec l'API
-                let allVentes = [...(allData.ventes_historique || [])];
-                
-                if (characterId) {
-                    const apiInvoices = await fetchInvoicesFromAPI(characterId);
-                    allVentes = [
-                        ...allVentes,
-                        ...apiInvoices.map(invoice => ({
-                            id: `api-${invoice.id}`,
-                            date: invoice.created_at || new Date().toISOString(),
-                            total: invoice.total_amount || invoice.amount || 0,
-                            client: invoice.client_name || 'Client externe',
-                            source: 'API',
-                            status: invoice.status || 'payé'
-                        }))
-                    ];
-                }
-                
-                const container = document.getElementById('liste-ventes');
-                
-                if (allVentes.length === 0) {
-                    container.innerHTML = `
-                        <div style="text-align: center; padding: 40px; color: #64748b;">
-                            <i class="fa fa-inbox" style="font-size: 48px; margin-bottom: 15px;"></i>
-                            <p>Aucune vente enregistrée</p>
-                            ${!characterId ? 
-                                '<small style="color: #f59e0b;">⚠️ Ajoutez votre ID personnage dans votre profil pour voir vos factures externes</small>' : 
-                                ''}
-                        </div>
-                    `;
-                    return;
-                }
-                
-                allVentes.sort((a, b) => new Date(b.date) - new Date(a.date));
-                
-                container.innerHTML = '';
-                
-                allVentes.forEach(vente => {
-                    const date = new Date(vente.date).toLocaleDateString('fr-FR', {
-                        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                    });
-                    
-                    const isFromAPI = vente.source === 'API';
-                    const isFromWebhook = vente.source === 'webhook';
-                    const bgColor = isFromAPI ? '#f0f9ff' : isFromWebhook ? '#eef2ff' : 'white';
-                    const borderColor = isFromAPI ? '#3b82f6' : isFromWebhook ? '#5865F2' : '#22c55e';
-                    
-                    const venteItem = document.createElement('div');
-                    venteItem.className = 'user-item';
-                    venteItem.style.cssText = `
-                        margin-bottom: 10px;
-                        background: ${bgColor};
-                        border-left: 4px solid ${borderColor};
-                        transition: all 0.3s ease;
-                    `;
-                    
-                    if (vente.source === 'webhook') {
-                        html += '<span style="background:#5865F2; color:white; padding:2px 8px; border-radius:12px; font-size:11px;">DISCORD</span>';
-                    }
-                    venteItem.innerHTML = `
-                        <div style="flex: 1; padding: 10px;">
-                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
-                                <strong>Facture #${vente.id || 'N/A'}</strong>
-                                ${isFromAPI ? 
-                                    '<span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">EXTERNE</span>' : 
-                                    '<span style="background: #22c55e; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">LOCAL</span>'
-                                }
-                                ${vente.client ? `<span style="color: #64748b; font-size: 13px;">👤 ${vente.client}</span>` : ''}
-                            </div>
-                            <div style="color: #64748b; font-size: 13px;">
-                                <i class="fa fa-calendar"></i> ${date}
-                            </div>
-                            ${vente.status ? `<div style="font-size: 12px; color: ${vente.status === 'payé' ? '#22c55e' : '#f59e0b'};">Statut: ${vente.status}</div>` : ''}
-                        </div>
-                        <div style="font-weight: bold; color: ${isFromAPI ? '#3b82f6' : '#22c55e'}; padding: 10px; font-size: 18px;">
-                            ${(vente.total || 0).toLocaleString('fr-FR')}$
-                        </div>
-                    `;
-                    
-                    container.appendChild(venteItem);
-                });
-                
-                // Ajouter un indicateur si l'API n'a pas pu être appelée
-                if (!characterId) {
-                    const warning = document.createElement('div');
-                    warning.style.cssText = 'margin-top: 15px; padding: 10px; background: #fffbeb; border-radius: 8px; color: #f59e0b; text-align: center; font-size: 13px;';
-                    warning.innerHTML = `
-                        <i class="fa fa-info-circle"></i> 
-                        Pour voir vos factures externes, ajoutez votre ID personnage dans votre profil.
-                    `;
-                    container.appendChild(warning);
-                }
-                
-            } catch (error) {
-                console.error("Erreur chargement ventes:", error);
-                document.getElementById('liste-ventes').innerHTML = `
-                    <div style="color: #ef4444; text-align: center; padding: 20px;">
-                        <i class="fa fa-exclamation-triangle"></i><br>
-                        Erreur: ${error.message}
-                    </div>
-                `;
-            }
+// Fonction pour afficher la liste des ventes
+async function loadVentesList() {
+    try {
+        const allData = await apiCall('/my_data');
+        
+        // Récupérer l'ID personnage
+        const users = await apiCall('/users');
+        const characterId = users[currentUser.username]?.id_personnage;
+        
+        // Fusionner avec l'API
+        let allVentes = [...(allData.ventes_historique || [])];
+        
+        if (characterId) {
+            const apiInvoices = await fetchInvoicesFromAPI(characterId);
+            allVentes = [
+                ...allVentes,
+                ...apiInvoices.map(invoice => ({
+                    id: `api-${invoice.id}`,
+                    date: invoice.created_at || new Date().toISOString(),
+                    total: invoice.total_amount || invoice.amount || 0,
+                    client: invoice.client_name || 'Client externe',
+                    source: 'API',
+                    status: invoice.status || 'payé'
+                }))
+            ];
         }
+        
+        const container = document.getElementById('liste-ventes');
+        
+        if (allVentes.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #64748b;">
+                    <i class="fa fa-inbox" style="font-size: 48px; margin-bottom: 15px;"></i>
+                    <p>Aucune vente enregistrée</p>
+                    ${!characterId ? 
+                        '<small style="color: #f59e0b;">⚠️ Ajoutez votre ID personnage dans votre profil pour voir vos factures externes</small>' : 
+                        ''}
+                </div>
+            `;
+            return;
+        }
+        
+        allVentes.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        // 🔴 CORRECTION ICI : Utiliser une variable pour construire le HTML
+        let html = '';
+        
+        allVentes.forEach(vente => {
+            const date = new Date(vente.date).toLocaleDateString('fr-FR', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+            
+            const isFromAPI = vente.source === 'API';
+            const isFromWebhook = vente.source === 'webhook';
+            const bgColor = isFromAPI ? '#f0f9ff' : isFromWebhook ? '#eef2ff' : 'white';
+            const borderColor = isFromAPI ? '#3b82f6' : isFromWebhook ? '#5865F2' : '#22c55e';
+            
+            html += `
+                <div class="user-item" style="
+                    margin-bottom: 10px;
+                    padding: 15px;
+                    background: ${bgColor};
+                    border-left: 4px solid ${borderColor};
+                    border-radius: 8px;
+                    transition: all 0.3s ease;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                ">
+                    <div style="flex: 1; padding: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px; flex-wrap: wrap;">
+                            <strong>Facture #${vente.id || 'N/A'}</strong>
+                            ${isFromAPI ? 
+                                '<span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">EXTERNE</span>' : 
+                                isFromWebhook ?
+                                '<span style="background: #5865F2; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">DISCORD</span>' :
+                                '<span style="background: #22c55e; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">LOCAL</span>'
+                            }
+                            ${vente.client ? `<span style="color: #64748b; font-size: 13px;">👤 ${vente.client}</span>` : ''}
+                        </div>
+                        <div style="color: #64748b; font-size: 13px;">
+                            <i class="fa fa-calendar"></i> ${date}
+                        </div>
+                        ${vente.status ? `<div style="font-size: 12px; color: ${vente.status === 'payé' ? '#22c55e' : '#f59e0b'};">Statut: ${vente.status}</div>` : ''}
+                    </div>
+                    <div style="font-weight: bold; color: ${isFromAPI ? '#3b82f6' : isFromWebhook ? '#5865F2' : '#22c55e'}; padding: 10px; font-size: 18px;">
+                        ${(vente.total || 0).toLocaleString('fr-FR')}$
+                    </div>
+                </div>
+            `;
+        });
+        
+        // 🔴 Assigner le HTML au container
+        container.innerHTML = html;
+        
+        // Ajouter un indicateur si l'API n'a pas pu être appelée
+        if (!characterId) {
+            const warning = document.createElement('div');
+            warning.style.cssText = 'margin-top: 15px; padding: 10px; background: #fffbeb; border-radius: 8px; color: #f59e0b; text-align: center; font-size: 13px;';
+            warning.innerHTML = `
+                <i class="fa fa-info-circle"></i> 
+                Pour voir vos factures externes, ajoutez votre ID personnage dans votre profil.
+            `;
+            container.appendChild(warning);
+        }
+        
+    } catch (error) {
+        console.error("Erreur chargement ventes:", error);
+        document.getElementById('liste-ventes').innerHTML = `
+            <div style="color: #ef4444; text-align: center; padding: 20px;">
+                <i class="fa fa-exclamation-triangle"></i><br>
+                Erreur: ${error.message}
+            </div>
+        `;
+    }
+}
 
         async function fetchInvoicesFromAPI(characterId) {
             if (!characterId) return [];
