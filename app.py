@@ -692,6 +692,8 @@ def update_settings_route():
         set_setting('advert_image', body['advert_image'])
     if 'advert_text' in body:
         set_setting('advert_text', body['advert_text'])
+    if 'discord_webhook' in body:
+        set_setting('discord_webhook', body['discord_webhook'])
     if 'lottery_price' in body:
         conn = get_db()
         cursor = conn.cursor()
