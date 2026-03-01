@@ -153,12 +153,12 @@ def init_db():
 
     # Utilisateurs par défaut
     default_users = [
-        ('admin', 'admin123', 'PDG', 'Dupont', 'Pierre'),
-        ('rh', 'rh123', 'DRH', 'Martin', 'Marie'),
-        ('chef1', 'chef123', "Chef d'équipe", 'Leroy', 'Jean'),
-        ('employe1', 'cdi123', 'CDI', 'Bernard', 'Sophie'),
-        ('employe2', 'cdd123', 'CDD', 'Petit', 'Thomas'),
-        ('apprenti1', 'app123', 'Apprenti', 'Dubois', 'Lucas'),
+        ('admin', 'admin123', 'PDG', 'Dupont', 'Pierre', ''),
+        ('rh', 'rh123', 'DRH', 'Martin', 'Marie', ''),
+        ('chef1', 'chef123', "Chef d'équipe", 'Leroy', 'Jean', ''),
+        ('employe1', 'cdi123', 'CDI', 'Bernard', 'Sophie', ''),
+        ('employe2', 'cdd123', 'CDD', 'Petit', 'Thomas', ''),
+        ('apprenti1', 'app123', 'Apprenti', 'Dubois', 'Lucas', ''),
     ]
     for u in default_users:
         cursor.execute("""
