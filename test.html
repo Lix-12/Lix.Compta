@@ -3512,7 +3512,7 @@ async function loadHistoriqueVentes(page = 1) {
     
     try {
         // Construire l'URL avec les paramètres
-        let url = `/api/ventes/historique?page=${page}&per_page=${historiquePerPage}`;
+        let url = `/ventes/historique?page=${page}&per_page=${historiquePerPage}`;
         if (historiqueFiltreSemaine) {
             url += `&semaine=${historiqueFiltreSemaine}`;
         }
@@ -3628,7 +3628,7 @@ async function loadHistoriqueVentes(page = 1) {
 // Charger les semaines disponibles
 async function loadSemainesDisponibles() {
     try {
-        const semaines = await apiCall('/api/ventes/semaines');
+        const semaines = await apiCall('/ventes/semaines');
         const select = document.getElementById('semaine-select');
         
         let options = '<option value="">📅 Toutes les semaines</option>';
