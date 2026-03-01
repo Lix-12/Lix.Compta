@@ -1296,6 +1296,106 @@ def extract_article(fields):
             return parts.replace('**', '') if parts else 'job/service'
     return 'job/service'
 
+@app.route('/api/ventes/historique', methods=['GET', 'OPTIONS'])
+@login_required
+def get_ventes_historique():
+    """Récupère l'historique complet des ventes avec pagination"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
+    # Paramètres de pagination
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 10))
+    semaine = request.args.get('semaine', None)  # Format: YYYY-WW
+    
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    
+    # Construire la requête de base
+    query = "SELECT * FROM ventes"
+    params = []
+    
+    # Filtrer par semaine si demandé
+    if semaine:
+        try:
+            year, week = semaine.split('-W')
+            # Calculer le début et fin de semaine
+            query += " WHERE YEARWEEK(date, 1) = %s"
+            params.append(f"{year}{week}")
+        except:
+            pass
+    
+    # Compter le total pour la pagination
+    count_query = query.replace("SELECT *", "SELECT COUNT(*) as total")
+    cursor.execute(count_query, params)
+    total = cursor.fetchone()['total']
+    
+    # Ajouter ORDER BY et LIMIT pour la pagination
+    query += " ORDER BY date DESC LIMIT %s OFFSET %s"
+    params.extend([per_page, (page - 1) * per_page])
+    
+    cursor.execute(query, params)
+    ventes = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    
+    # Formater les données
+    for vente in ventes:
+        if isinstance(vente['date'], datetime):
+            vente['date'] = vente['date'].isoformat()
+        if isinstance(vente['items'], str):
+            try:
+                vente['items'] = json.loads(vente['items'])
+            except:
+                vente['items'] = []
+    
+    return jsonify({
+        'ventes': ventes,
+        'pagination': {
+            'page': page,
+            'per_page': per_page,
+            'total': total,
+            'total_pages': (total + per_page - 1) // per_page
+        }
+    })
+
+@app.route('/api/ventes/semaines', methods=['GET', 'OPTIONS'])
+@login_required
+def get_semaines_disponibles():
+    """Récupère la liste des semaines où il y a des ventes"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        SELECT 
+            YEAR(date) as annee,
+            WEEK(date, 1) as semaine,
+            COUNT(*) as nb_ventes,
+            SUM(total) as total_semaine
+        FROM ventes 
+        GROUP BY YEAR(date), WEEK(date, 1)
+        ORDER BY annee DESC, semaine DESC
+    """)
+    
+    semaines = []
+    for row in cursor.fetchall():
+        annee, semaine, nb_ventes, total_semaine = row
+        semaines.append({
+            'id': f"{annee}-W{semaine:02d}",
+            'annee': annee,
+            'semaine': semaine,
+            'nb_ventes': nb_ventes,
+            'total': float(total_semaine) if total_semaine else 0
+        })
+    
+    cursor.close()
+    conn.close()
+    
+    return jsonify(semaines)
+
 # ─────────────────────────────────────────────
 # DÉMARRAGE
 # ─────────────────────────────────────────────
