@@ -1141,7 +1141,9 @@ def discord_webhook():
     # Gérer les requêtes OPTIONS (CORS)
     if request.method == 'OPTIONS':
         return '', 200
-    
+    data = request.get_json()
+    print("📦 DONNÉES COMPLÈTES REÇUES:")
+    print(json.dumps(data, indent=2, ensure_ascii=False))
     print("🔔 Webhook reçu du bot Discord!")
     
     try:
