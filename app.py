@@ -1185,7 +1185,7 @@ def discord_webhook():
             montant = extract_amount(embed.get('description', ''))
             emetteur_id = extract_id_from_fields(embed.get('fields', []), 'Émetteur')
             emetteur_nom = extract_name_from_fields(embed.get('fields', []), 'Émetteur')
-            payeur_nom = extract_name_from_fields(embed.get('fields', []), 'Payer')
+            payeur_nom = extract_name_from_fields(embed.get('fields', []), 'Payeur')
             article = extract_article(embed.get('fields', []))
             
             if not emetteur_id or not montant:
@@ -1243,34 +1243,57 @@ def discord_webhook():
         print(f"❌ Erreur: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
-# Fonctions d'extraction (à mettre dans le même fichier)
 def extract_amount(description):
+    """Extrait le montant d'une description de facture"""
     import re
-    match = re.search(r'\*\*\$(\d+)\*\*', description)
-    return int(match.group(1)) if match else None
+    # Pattern pour capturer: **$9,100** ou **$150** ou **$1,234,567**
+    match = re.search(r'\*\*\$([0-9,]+)\*\*', description)
+    if match:
+        # Enlève les virgules et convertit
+        amount_str = match.group(1).replace(',', '')
+        try:
+            return int(amount_str)
+        except ValueError:
+            return None
+    return None
 
 def extract_id_from_fields(fields, field_name):
+    """Extrait l'ID d'un champ (Émetteur, Payeur)"""
+    import re
     for field in fields:
         name = field.get('name', '').lower()
         if field_name.lower() in name:
             value = field.get('value', '')
+            # Pattern pour ID: 309554 ou ID: 309554
             match = re.search(r'ID[:\s]*(\d+)', value)
-            return match.group(1) if match else None
-
-        print(field)
+            if match:
+                return match.group(1)
+            
+            # Si pas trouvé avec ID:, cherche juste un nombre à la fin
+            match = re.search(r'\*ID: (\d+)\*', value)
+            if match:
+                return match.group(1)
     return None
 
 def extract_name_from_fields(fields, field_name):
+    """Extrait le nom d'un champ"""
     for field in fields:
         if field.get('name') == field_name:
-            return field.get('value', '').split('\n')[0].strip()
+            value = field.get('value', '')
+            # Enlève le ** et le *ID: xxx*
+            name = value.split('\n')[0].replace('**', '').strip()
+            return name
     return None
 
 def extract_article(fields):
+    """Extrait le nom de l'article/service"""
     for field in fields:
         if field.get('name') == 'Articles/Services':
-            parts = field.get('value', '').split('×')[0].strip()
-            return parts if parts else 'job/service'
+            value = field.get('value', '')
+            # Format: "**job_service** × 1 - $9,100"
+            parts = value.split('×')[0].strip()
+            # Enlève les **
+            return parts.replace('**', '') if parts else 'job/service'
     return 'job/service'
 
 # ─────────────────────────────────────────────
