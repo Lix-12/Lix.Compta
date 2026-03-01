@@ -483,7 +483,9 @@
                             <div>
                                 <input type="text" id="new-nom" placeholder="Nom *" style="width: 100%;">
                             </div>
-
+                            <div>
+                                <input type="number" id="new-id-personnage" placeholder="ID PERSONNAGE" style="width: 100%;">
+                            </div>
                             <div>
                                 <select id="new-grade" style="width: 100%; padding: 8px;">
                                     <option value="Apprenti">Apprenti</option>
@@ -1522,6 +1524,9 @@
                     </div>
                     <div style="color:#64748b; font-size:14px;">
                         ${userData.prenom || ''} ${userData.nom || ''}<br>
+                        <span style="background:#f3f4f6; padding:2px 8px; border-radius:12px; display:inline-block; margin:4px 0;">
+                            🆔 ${userData.id_personnage || 'Aucun ID'}
+                        </span><br>
                         Salaire: ${gradesData[userData.grade]?.salaire_fixe ?? '--'}$ • Commission: ${gradesData[userData.grade]?.commission ?? '--'}%
                     </div>
                 </div>
@@ -1608,7 +1613,10 @@
                             <input type="text" id="edit-nom" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px;">
                         </div>
                     </div>
-                    
+                    <div>
+                        <label style="display:block; margin-bottom:5px; font-weight:500;">ID Personnage</label>
+                        <input type="text" id="edit-id-personnage" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px;">
+                    </div>
                     <div>
                         <label style="display:block; margin-bottom:5px; font-weight:500;">Grade</label>
                         <select id="edit-grade" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px;">
@@ -1687,7 +1695,8 @@
             const updates = {
                 nom: document.getElementById('edit-nom').value,
                 prenom: document.getElementById('edit-prenom').value,
-                grade: document.getElementById('edit-grade').value
+                grade: document.getElementById('edit-grade').value,
+                id_personnage: document.getElementById('edit-id-personnage').value
             };
 
             const newPassword = document.getElementById('edit-password').value;
@@ -1770,6 +1779,7 @@
                 document.getElementById('edit-username').value = username;
                 document.getElementById('edit-prenom').value = userData.prenom || '';
                 document.getElementById('edit-nom').value = userData.nom || '';
+                document.getElementById('edit-id-personnage').value = userData.id_personnage || '';
                 document.getElementById('edit-grade').value = userData.grade || 'Apprenti';
                 document.getElementById('edit-password').value = '';
 
@@ -1970,10 +1980,11 @@
             const passwordElement = document.getElementById('new-password');
             const nomElement = document.getElementById('new-nom');
             const prenomElement = document.getElementById('new-prenom');
+            const idpersonnageElement = document.getElementById('new-id-personnage');
             const gradeElement = document.getElementById('new-grade');
 
             // Vérifier que tous les éléments existent
-            if (!usernameElement || !passwordElement || !nomElement || !prenomElement || !gradeElement) {
+            if (!usernameElement || !passwordElement || !nomElement || !prenomElement || !idpersonnageElement || !gradeElement) {
                 alert("Erreur: Formulaire incomplet");
                 return;
             }
@@ -1982,10 +1993,11 @@
             const password = passwordElement.value;
             const nom = nomElement.value.trim();
             const prenom = prenomElement.value.trim();
+            const id = idpersonnageElement.value;
             const grade = gradeElement.value;
 
             // Validation des champs requis
-            if (!username || !password || !nom || !prenom || !grade) {
+            if (!username || !password || !nom || !prenom || !id || !grade) {
                 alert("Veuillez remplir tous les champs obligatoires (marqués d'un *)");
                 return;
             }
@@ -2005,6 +2017,7 @@
                         password,
                         nom,
                         prenom,
+                        id,
                         grade
                     }
                 });
@@ -2016,6 +2029,7 @@
                     passwordElement.value = '';
                     nomElement.value = '';
                     prenomElement.value = '';
+                    idpersonnageElement.value = '',
                     gradeElement.value = 'Apprenti';
 
                     // Recharger la liste des utilisateurs
