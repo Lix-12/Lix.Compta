@@ -835,11 +835,12 @@ def acheter_tickets():
             if num < 0 or num > 100:
                 return jsonify({'success': False, 'message': 'Les numéros doivent être entre 0 et 100'}), 400
     username = session['user']['username']
+    fullname = f"{session['user']['prenom']} {session['user']['nom']}"
     loterie = Loterie()
     resultat = loterie.acheter_tickets(
         client_data=client_data,
         tickets_data=tickets_data,
-        vendeur=username
+        vendeur=fullname
     )
     
     return jsonify(resultat)
@@ -1199,7 +1200,7 @@ def discord_webhook():
             cursor = conn.cursor(dictionary=True)
             cursor.execute("SELECT username FROM users WHERE id_personnage = %s", (emetteur_id,))
             user = cursor.fetchone()
-            
+            fullname = f"{user['prenom']} {user['nom']}"
             if user:
                 print(f"✅ Utilisateur trouvé: {user['username']}")
                 
@@ -1221,7 +1222,7 @@ def discord_webhook():
                 cursor.execute("""
                     INSERT INTO ventes (vendeur, date, total, items, source)
                     VALUES (%s, NOW(), %s, %s, %s)
-                """, (user['username'], montant, json.dumps(vente_data), 'webhook'))
+                """, (fullname, montant, json.dumps(vente_data), 'webhook'))
                 
                 conn.commit()
                 ventes_crees += 1
