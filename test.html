@@ -3137,11 +3137,6 @@ async function saveCharge() {
             
             // Recharger la liste des charges
             await loadCharges();
-            
-            // Mettre à jour le graphique
-            if (document.getElementById('charges').style.display === 'block') {
-                updateCharts();
-            }
         } else {
             alert('❌ Erreur : ' + result.message);
         }
